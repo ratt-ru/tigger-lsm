@@ -22,7 +22,7 @@ extras_require = {
 
 
 setup(
-    name ="astro-tigger",
+    name ="astro-tigger-lsm",
     version=__version__,
     packages=find_packages(),
     extras_require=extras_require,

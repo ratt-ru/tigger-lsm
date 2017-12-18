@@ -30,7 +30,7 @@ To obtain on ubuntu you can run::
 
 now from pip::
 
-    $ pip install astro-tigger
+    $ pip install astro-tigger-lsm
 
 or from source::
 
@@ -39,8 +39,8 @@ or from source::
     $ python setup.py install
 
 
-Running Tigger
-==============
+Using Tigger-LSM
+================
 
 In python:
 
@@ -64,4 +64,4 @@ Travis
 ======
 
 .. image:: https://travis-ci.org/ska-sa/tigger-lsm.svg?branch=master
-    :target: https://travis-ci.org/ska-sa/tigger
+    :target: https://travis-ci.org/ska-sa/tigger-lsm
