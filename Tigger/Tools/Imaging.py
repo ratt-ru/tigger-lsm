@@ -31,8 +31,8 @@ pyfits = Kittens.utils.import_pyfits();
 import math
 import numpy
 
-from Tigger.Coordinates import Projection,radec_string
-from Tigger.Images import FITSHeaders
+from Tigger.Coordinates import Projection
+import FITSHeaders
 from scipy.ndimage.filters import convolve
 from scipy.ndimage.interpolation import map_coordinates
 import astLib.astWCS

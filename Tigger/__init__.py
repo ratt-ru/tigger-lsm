@@ -28,10 +28,8 @@ import sys
 
 from Tigger.Models.Formats import load, save, listFormats
 import Kittens.config
-import os.path
 
-
-__version__ = "1.3.8"
+__version__ = "1.4"
 
 release_string = __version__
 svn_revision_string = __version__
@@ -39,24 +37,10 @@ svn_revision_html = __version__
 
 matplotlib_nuked = False
 
-# initializes GUI-related globals. Only called from the viewer
-def init_gui():
-    from Kittens.widgets import BusyIndicator
-    import Kittens.pixmaps
-    import Kittens.utils
-    global pixmaps, Config, ConfigFile, ConfigFileName
-    pixmaps = Kittens.pixmaps.PixmapCache("Tigger")
-    ConfigFileName = ".tigger.conf"
-    ConfigFile = Kittens.config.DualConfigParser("tigger.conf",["/usr/lib/Tigger", os.path.dirname(__file__)])
-    Config = Kittens.config.SectionParser(ConfigFile,"Tigger")
-
-
 startup_dprint = startup_dprintf = lambda *dum:None
 _verbosity = Kittens.utils.verbosity(name="tigger")
 dprint = _verbosity.dprint
 dprintf = _verbosity.dprintf
-
-
 
 def import_pyfits ():
   """Helper function to import pyfits and return it. Provides a workaround for
@@ -87,6 +71,7 @@ def nuke_matplotlib ():
   into the sys.modules dict. Call nuke_matplotlib() once, and all further attempts to
   import matplotlib by any other code will be cheerfully ignored.
   """
+  global matplotlib_nuked
   if 'pylab' not in sys.modules:
     # replace the modules referenced by astLib by dummy_module objects, which return a dummy callable for every attribute
     class dummy_module (object):
@@ -94,8 +79,3 @@ def nuke_matplotlib ():
         return 'nowhere' if name == '__file__' else (lambda *args,**kw:True)
     sys.modules['pylab'] = sys.modules['matplotlib'] = sys.modules['matplotlib.patches'] = dummy_module()
     matplotlib_nuked = True
-
-
-
-
-

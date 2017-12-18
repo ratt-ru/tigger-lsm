@@ -26,13 +26,10 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-import sys
-import pyfits
-import re
 import os.path
 import pyfits
+import Tigger
 import math
-import numpy
 from math import *
 from astLib.astWCS import WCS
 
@@ -42,21 +39,9 @@ NATIVE = "Tigger";
 
 if __name__ == '__main__':
   import Kittens.utils
-  from Kittens.utils import curry
   _verbosity = Kittens.utils.verbosity(name="convert-model");
   dprint = _verbosity.dprint;
   dprintf = _verbosity.dprintf;
-
-  # find Tigger
-  try:
-    import Tigger
-  except ImportError:
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))));
-    try:
-      import Tigger
-    except:
-      print "Unable to import the Tigger package. Please check your installation and PYTHONPATH.";
-      sys.exit(1);
 
   Tigger.nuke_matplotlib();  # don't let the door hit you in the ass, sucka
       

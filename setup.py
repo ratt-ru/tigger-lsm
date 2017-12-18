@@ -1,26 +1,9 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import os
-import sys
 from setuptools import setup, find_packages
-import warnings
 
-msg = """
-Could not detect PyQt4. Install PyQt4 system wide. If you are in
-a virtualenv install the vext.pyqt4 package: 
-
-  $ pip install astro-tigger[venv]
-
-"""
-
-try:
-    import PyQt4
-except ImportError:
-    warnings.warn(msg)
-
-
-__version__ = "1.3.10"
+__version__ = "1.4"
 
 requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'pyfits']
 
@@ -29,16 +12,12 @@ scripts = [
     'Tigger/bin/tigger-make-brick',
     'Tigger/bin/tigger-restore',
     'Tigger/bin/tigger-tag',
-    'Tigger/tigger',
 ]
 
-package_data = {'Tigger': [
-    'icons/*.png',
-    'tigger.conf',
-] }
+package_data = {
+}
 
 extras_require = {
-    'venv': ['vext.pyqt4'],
 }
 
 
