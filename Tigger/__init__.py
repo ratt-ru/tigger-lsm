@@ -29,7 +29,7 @@ import sys
 from Tigger.Models.Formats import load, save, listFormats
 import Kittens.config
 
-__version__ = "1.4"
+__version__ = "1.4.2"
 
 release_string = __version__
 svn_revision_string = __version__
