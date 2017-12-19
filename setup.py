@@ -28,10 +28,10 @@ setup(
     extras_require=extras_require,
     scripts=scripts,
     package_data=package_data,
-    description="yet another FITS image viewer",
+    description="Python libraries and command-line tools for manipulating Tigger-format LSMs",
     author="Oleg Smirnov",
     author_email="osmirnov@gmail.com",
-    url="https://github.com/ska-sa/tigger",
+    url="https://github.com/ska-sa/tigger-lsm",
     install_requires=requirements,
 )
 
