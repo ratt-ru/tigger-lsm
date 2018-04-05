@@ -27,7 +27,7 @@
 #
 
 import Kittens.utils
-pyfits = Kittens.utils.import_pyfits();
+from astropy.io import fits as pyfits
 import math
 import numpy
 

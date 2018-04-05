@@ -27,7 +27,7 @@
 #
 
 import os.path
-import pyfits
+from astropy.io import fits as pyfits
 import Tigger
 import math
 from math import *

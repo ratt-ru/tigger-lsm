@@ -27,11 +27,10 @@
 #
 
 import sys
-import pyfits
+from astropy.io import fits as pyfits
 import re
 import os.path
 import glob
-import pyfits
 import math
 import numpy
 import traceback
@@ -504,7 +503,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
       if [ src.name for src in sources if src.name == name ]:
         print "Error: model already contains a source named '%s'"%name;
       # add brick
-      import pyfits
+      from astropy.io import fits as pyfits
       from astLib.astWCS import WCS
       input_hdu = pyfits.open(fitsfile)[0];
       hdr = input_hdu.header;

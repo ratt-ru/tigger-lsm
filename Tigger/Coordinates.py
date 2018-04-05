@@ -36,7 +36,8 @@ startup_dprint(1,"imported numpy");
 
 
 import Kittens.utils
-pyfits = Kittens.utils.import_pyfits();
+from astropy.io import fits as pyfits
+
 startup_dprint(1,"imported pyfits");
 
 DEG = math.pi/180;

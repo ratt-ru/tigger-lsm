@@ -27,10 +27,9 @@
 #
 
 import sys
-import pyfits
+from astropy.io import fits as pyfits
 import re
 import os.path
-import pyfits
 import math
 import numpy
 import traceback

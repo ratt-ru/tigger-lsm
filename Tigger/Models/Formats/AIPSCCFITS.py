@@ -33,7 +33,7 @@ import os.path
 import re
 
 import  numpy
-import pyfits
+from astropy.io import fits as pyfits
 
 import Kittens.utils
 
