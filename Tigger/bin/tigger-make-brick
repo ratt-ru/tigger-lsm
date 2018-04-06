@@ -26,11 +26,12 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
+import sys
 import os.path
 from astropy.io import fits as pyfits
 import Tigger
 import math
-from math import *
+from math import cos
 from astLib.astWCS import WCS
 
 DEG = math.pi/180;

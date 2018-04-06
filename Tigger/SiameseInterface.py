@@ -23,9 +23,10 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>,
 # or write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#
 
-from Timba.TDL import *
+import sys
+
+from Timba.TDL import TDLCompileOptions, TDLRuntimeOptions, TDLRuntimeOptions, TDLOption, TDLFileSelect, TDLMenu
 from Timba.utils import curry
 import traceback
 import Meow
@@ -33,7 +34,6 @@ import Meow.OptionTools
 import Meow.Context
 import Meow.ParmGroup
 import math
-from math import *
 import os.path
 
 from Meow.MeqMaker import SourceSubsetSelector
@@ -77,7 +77,7 @@ class TiggerSkyModel (object):
     """Returns list of compile-time options""";
     if not self._compile_opts:
       self._compile_opts = [
-        TDLOption("filename","Tigger LSM file",
+        TDLRuntimeOptions("filename","Tigger LSM file",
                    TDLFileSelect("Tigger models (*."+ModelHTML.DefaultExtension+");;All files (*)",default=self.filename,exist=True),
                    namespace=self),
         TDLOption('lsm_subset',"Source subset",["all"],more=str,namespace=self,

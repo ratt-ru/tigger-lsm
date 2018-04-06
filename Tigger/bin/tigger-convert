@@ -684,7 +684,6 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
 
     else: #else, assume pb is an expession
       try:
-        from math import *
         pbexp = eval('lambda r,fq:'+pb);
         dum = pbexp(0,1e+9); # evaluate at r=0 and 1 GHz as a test
         if not isinstance(dum,float):

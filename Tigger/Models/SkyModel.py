@@ -24,7 +24,7 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from ModelClasses import *
+from ModelClasses import ModelItem
 import PlotStyles
 
 import re
@@ -48,7 +48,7 @@ class ModelTagSet (ModelItem):
 
   def get (self,tagname):
     """Returns ModelTag object associated with tag name, inserting a new one if not found""";
-    return self.tags.setdefault(name,ModelTag(name));
+    return self.tags.setdefault(tagname,ModelTag(tagname));
 
   def getAll (self):
     all = self.tags.values();

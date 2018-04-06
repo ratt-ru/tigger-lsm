@@ -26,7 +26,7 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-from numpy import *
+import numpy as np
 from scipy import optimize
 from scipy import stats
 
@@ -36,13 +36,13 @@ def moments (data,circle,rotate,vheight):
     moments.  Depending on the input parameters, will only output 
     a subset of the above"""
     total = data.sum()
-    X, Y = indices(data.shape)
+    X, Y = np.ndices(data.shape)
     x = (X*data).sum()/total
     y = (Y*data).sum()/total
     col = data[:, int(y)]
-    width_x = sqrt(abs((arange(col.size)-y)**2*col).sum()/col.sum())
+    width_x = np.sqrt(abs((np.arange(col.size)-y)**2*col).sum()/col.sum())
     row = data[int(x), :]
-    width_y = sqrt(abs((arange(row.size)-x)**2*row).sum()/row.sum())
+    width_y = np.sqrt(abs((np.arange(row.size)-x)**2*row).sum()/row.sum())
     width = ( width_x + width_y ) / 2.
     height = stats.mode(data.ravel())[0][0] if vheight else 0;
     amplitude = data.max()-height
@@ -100,9 +100,9 @@ def twodgaussian(inpars, circle, rotate, vheight):
         width_y = float(width_y)
     if rotate == 1:
         rota = inpars.pop(0)
-        rota = pi/180. * float(rota)
-        rcen_x = center_x * cos(rota) - center_y * sin(rota)
-        rcen_y = center_x * sin(rota) + center_y * cos(rota)
+        rota = np.pi/180. * float(rota)
+        rcen_x = center_x * np.cos(rota) - center_y * np.sin(rota)
+        rcen_y = center_x * np.sin(rota) + center_y * np.cos(rota)
     else:
         rcen_x = center_x
         rcen_y = center_y
@@ -112,12 +112,12 @@ def twodgaussian(inpars, circle, rotate, vheight):
             
     def rotgauss(x,y):
         if rotate==1:
-            xp = x * cos(rota) - y * sin(rota)
-            yp = x * sin(rota) + y * cos(rota)
+            xp = x * np.cos(rota) - y * np.sin(rota)
+            yp = x * np.sin(rota) + y * np.cos(rota)
         else:
             xp = x
             yp = y
-        g = height+amplitude*exp(
+        g = height+amplitude*np.exp(
             -(((rcen_x-xp)/width_x)**2+
             ((rcen_y-yp)/width_y)**2)/2.)
         return g
@@ -156,9 +156,9 @@ def gaussfit(data,err=None,params=[],autoderiv=1,return_all=0,circle=0,rotate=1,
     if params == []:
         params = (moments(data,circle,rotate,vheight))
     if err == None:
-        errorfunction = lambda p: ravel((twodgaussian(p,circle,rotate,vheight)(*indices(data.shape)) - data))
+        errorfunction = lambda p: np.ravel((twodgaussian(p,circle,rotate,vheight)(*np.indices(data.shape)) - data))
     else:
-        errorfunction = lambda p: ravel((twodgaussian(p,circle,rotate,vheight)(*indices(data.shape)) - data)/err)
+        errorfunction = lambda p: np.ravel((twodgaussian(p,circle,rotate,vheight)(*np.indices(data.shape)) - data)/err)
     if autoderiv == 0:
         # the analytic derivative, while not terribly difficult, is less efficient and useful.  I only bothered
         # putting it here because I was instructed to do so for a class project - please ask if you would like 
