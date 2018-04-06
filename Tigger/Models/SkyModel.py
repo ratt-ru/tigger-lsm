@@ -26,9 +26,10 @@
 
 import re
 
-import PlotStyles
-from ModelClasses import ModelItem
+from . import PlotStyles
+from .ModelClasses import ModelItem
 from Tigger.Coordinates import angular_dist_pos_angle, DEG
+from functools import reduce
 
 
 class ModelTag(ModelItem):
@@ -53,7 +54,7 @@ class ModelTagSet(ModelItem):
         return self.tags.setdefault(tagname, ModelTag(tagname))
 
     def getAll(self):
-        all = self.tags.values()
+        all = list(self.tags.values())
         all.sort(lambda a, b: cmp(a.name, b.name))
         return all
 
@@ -72,7 +73,7 @@ class ModelTagSet(ModelItem):
             markup += "mdlattr=%s " % attrname
         markup += ">"
         # write mandatory attributes
-        for name, tt in self.tags.iteritems():
+        for name, tt in self.tags.items():
             markup += self.renderAttrMarkup(name, tt, tag="TR", mandatory=True)
         # closing tag
         markup += "</%s>" % tag
@@ -137,7 +138,7 @@ class Source(ModelItem):
                 self.computeTotal(sources)
 
         def computeTotal(self, sources):
-            self.total = len(filter(self.func, sources))
+            self.total = len(list(filter(self.func, sources)))
             return self.total
 
 
@@ -318,7 +319,7 @@ class SkyModel(ModelItem):
 
     def _remakeGroupList(self):
         self.groupings = [self.defgroup, self.curgroup, self.selgroup]
-        typenames = self._typegroups.keys()
+        typenames = list(self._typegroups.keys())
         typenames.sort()
         self.groupings += [self._typegroups[name] for name in typenames]
         self.groupings += [self._taggroups[name] for name in self.tagnames]
@@ -411,7 +412,7 @@ class SkyModel(ModelItem):
 
     def save(self, filename, format=None, verbose=True):
         """Convenience function, saves model to file. Format may be specified explicitly, or determined from filename."""
-        import Formats
+        from . import Formats
         Formats.save(self, filename, format=format, verbose=verbose)
 
     _re_bynumber = re.compile("^([!-])?(\\d+)?:(\\d+)?$")
