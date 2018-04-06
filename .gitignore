@@ -4,5 +4,6 @@
 debian/
 build/
 MANIFEST
-astro_tigger.egg-info/
+*.egg-info/
+.venv*/
 dist/
