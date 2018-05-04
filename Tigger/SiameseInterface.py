@@ -76,7 +76,7 @@ class TiggerSkyModel(object):
         """Returns list of compile-time options"""
         if not self._compile_opts:
             self._compile_opts = [
-                TDLRuntimeOptions("filename", "Tigger LSM file",
+                TDLOption("filename", "Tigger LSM file",
                                   TDLFileSelect("Tigger models (*." + ModelHTML.DefaultExtension + ");;All files (*)",
                                                 default=self.filename, exist=True),
                                   namespace=self),
