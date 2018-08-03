@@ -23,7 +23,7 @@
 # or write to the Free Software Foundation, Inc., 
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-
+import importlib
 import traceback
 
 import Kittens.utils
@@ -43,7 +43,7 @@ def _initFormats():
     if not _FormatsInitialized:
         for format in ["ModelHTML", "ASCII", "BBS", "NEWSTAR", "AIPSCC", "AIPSCCFITS", "PyBDSMGaul"]:
             try:
-                __import__(format, globals(), locals())
+                importlib.import_module("Tigger.Models.Formats." + format)
             except:
                 traceback.print_exc()
                 print("Error loading support for format '%s', see above. Format will not be available." % format)

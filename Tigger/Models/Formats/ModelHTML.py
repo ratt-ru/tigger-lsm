@@ -85,7 +85,7 @@ def save(model, filename, sources=None, **kw):
 def load(filename, **kw):
     parser = ModelIndexParser()
     parser.reset()
-    for line in file(filename):
+    for line in open(filename):
         parser.feed(line)
     parser.close()
     if not parser.toplevel_objects:
