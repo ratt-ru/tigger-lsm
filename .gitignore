@@ -7,3 +7,4 @@ MANIFEST
 *.egg-info/
 .venv*/
 dist/
+test/bla.restored.fits

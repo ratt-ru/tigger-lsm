@@ -142,7 +142,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
     # now process file line-by-line
     linenum = 0
     format_str = ''
-    for line in file(filename):
+    for line in open(filename):
         # for the first line, figure out the file format
         if not linenum:
             if not format and line.startswith("#format:"):
@@ -361,9 +361,9 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 brightest_name = src.name
                 radec0 = ra, dec
         except:
-            if verbose:
-                traceback.print_exc()
             dprintf(0, "%s:%d: %s, skipping\n", filename, linenum, str(sys.exc_info()[1]))
+            if verbose:
+                raise
     dprintf(2, "imported %d sources from file %s\n", len(srclist), filename)
     # create model
     model = ModelClasses.SkyModel(*srclist)
