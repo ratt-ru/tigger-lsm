@@ -260,7 +260,7 @@ class ModelItem(object):
         return markup
 
     numpy_int_types = tuple([
-        getattr(numpy, "%s%d" % (t, d)) for t in ("int", "uint") for d in 8, 16, 32, 64
+        getattr(numpy, "%s%d" % (t, d)) for t in ("int", "uint") for d in (8, 16, 32, 64)
         if hasattr(numpy, "%s%d" % (t, d))
     ])
     numpy_float_types = tuple([
