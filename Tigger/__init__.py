@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#% $Id$
+# % $Id$
 #
 #
 # Copyright (C) 2002-2011
@@ -26,8 +26,9 @@
 
 import sys
 
-from Tigger.Models.Formats import load, save, listFormats
 import Kittens.config
+
+from Tigger.Models.Formats import load, save, listFormats
 
 __version__ = "1.4.2"
 
@@ -37,45 +38,34 @@ svn_revision_html = __version__
 
 matplotlib_nuked = False
 
-startup_dprint = startup_dprintf = lambda *dum:None
+startup_dprint = startup_dprintf = lambda *dum: None
 _verbosity = Kittens.utils.verbosity(name="tigger")
 dprint = _verbosity.dprint
 dprintf = _verbosity.dprintf
 
-def import_pyfits ():
-  """Helper function to import pyfits and return it. Provides a workaround for
-  pyfits-2.3, which is actually arrogant enough (fuck you with a bargepole, pyfits!) 
-  to replace the standard warnings.formatwarning function with its own BROKEN version, 
-  thus breaking all other code that uses the warnings module."""
-  if 'pyfits' not in sys.modules:
-    import pyfits
-    import warnings
-    if getattr(pyfits,'formatwarning',None) is warnings.formatwarning:
-      def why_is_pyfits_overriding_warnings_formatwarning_with_a_broken_one_damn_you_pyfits (message,category,  filename,lineno,line=None):
-        return str(message)+'\n'
-      warnings.formatwarning = why_is_pyfits_overriding_warnings_formatwarning_with_a_broken_one_damn_you_pyfits
-    if getattr(pyfits,'showwarning',None) is warnings.showwarning:
-      def showwarning_damn_you_pyfits_damn_you_sincerely (message,category,filename,lineno,file=None,line=None):
-        pyfits.showwarning(message,category,filename,lineno,file=file)
-      warnings.showwarning = showwarning_damn_you_pyfits_damn_you_sincerely
-  return pyfits
+
+def import_pyfits():
+    # leaving this here for backwards compatibility
+    from astropy.io import fits as pyfits
+    return pyfits
 
 
-def nuke_matplotlib ():
-  """Some people think nothing of importing matplotlib at every opportunity, with no regard
-  to consequences. Tragically, some of these people also write Python code, and some of them
-  are responsible for astLib. Seriously man, if I just want to pull in WCS support, why the fuck
-  do I need the monstrous entirety of matplotlib to come along with it, especially since it
-  kills things like Qt outright?
-  This function prevents such perversitities from happening, by inserting dummy modules
-  into the sys.modules dict. Call nuke_matplotlib() once, and all further attempts to
-  import matplotlib by any other code will be cheerfully ignored.
-  """
-  global matplotlib_nuked
-  if 'pylab' not in sys.modules:
-    # replace the modules referenced by astLib by dummy_module objects, which return a dummy callable for every attribute
-    class dummy_module (object):
-      def __getattr__ (self,name):
-        return 'nowhere' if name == '__file__' else (lambda *args,**kw:True)
-    sys.modules['pylab'] = sys.modules['matplotlib'] = sys.modules['matplotlib.patches'] = dummy_module()
-    matplotlib_nuked = True
+def nuke_matplotlib():
+    """Some people think nothing of importing matplotlib at every opportunity, with no regard
+    to consequences. Tragically, some of these people also write Python code, and some of them
+    are responsible for astLib. Seriously man, if I just want to pull in WCS support, why the fuck
+    do I need the monstrous entirety of matplotlib to come along with it, especially since it
+    kills things like Qt outright?
+    This function prevents such perversitities from happening, by inserting dummy modules
+    into the sys.modules dict. Call nuke_matplotlib() once, and all further attempts to
+    import matplotlib by any other code will be cheerfully ignored.
+    """
+    global matplotlib_nuked
+    if 'pylab' not in sys.modules:
+        # replace the modules referenced by astLib by dummy_module objects, which return a dummy callable for every attribute
+        class dummy_module(object):
+            def __getattr__(self, name):
+                return 'nowhere' if name == '__file__' else (lambda *args, **kw: True)
+
+        sys.modules['pylab'] = sys.modules['matplotlib'] = sys.modules['matplotlib.patches'] = dummy_module()
+        matplotlib_nuked = True

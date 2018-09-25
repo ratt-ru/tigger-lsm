@@ -3,5 +3,7 @@
 .idea/
 build/
 MANIFEST
-astro_tigger.egg-info/
+*.egg-info/
+.venv*/
 dist/
+test/bla.restored.fits
