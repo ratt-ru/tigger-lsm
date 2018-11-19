@@ -35,13 +35,8 @@ from numpy import sin, cos
 
 startup_dprint(1, "imported numpy")
 
-from astropy.io import fits as pyfits
-
-startup_dprint(1, "imported pyfits")
 
 DEG = math.pi / 180
-
-startup_dprint(1, "importing WCS")
 
 # If we're being imported outside the main app (e.g. a script is trying to read a Tigger model,
 # whether TDL or otherwise), then pylab may be needed by that script for decent God-fearing
@@ -57,16 +52,6 @@ if not Tigger.matplotlib_nuked:
 import locale
 
 locale.setlocale(locale.LC_NUMERIC, 'C')
-
-try:
-    from astLib.astWCS import WCS
-    import PyWCSTools.wcs
-except ImportError:
-    print("Failed to import the astLib.astWCS and/or PyWCSTools module. Please install the astLib package (http://astlib.sourceforge.net/).")
-    raise
-
-startup_dprint(1, "imported WCS")
-
 
 def angular_dist_pos_angle(ra1, dec1, ra2, dec2):
     """Computes the angular distance between the two points on a sphere, and
@@ -221,11 +206,19 @@ class Projection(object):
 
         def __init__(self, header):
             """Constructor. Create from filename (treated as FITS file), or a FITS header object"""
+            from astropy.io import fits as pyfits
+            try:
+                from astLib.astWCS import WCS
+                import PyWCSTools.wcs
+            except ImportError:
+                print(
+                    "Failed to import the astLib.astWCS and/or PyWCSTools module. Please install the astLib package (http://astlib.sourceforge.net/).")
+                raise
+
             # attach to FITS file or header
             if isinstance(header, str):
                 header = pyfits.open(header)[0].header
-            else:
-                self.wcs = WCS(header, mode="pyfits")
+            self.wcs = WCS(header, mode="pyfits")
             try:
                 ra0, dec0 = self.wcs.getCentreWCSCoords()
                 self.xpix0, self.ypix0 = self.wcs.wcs2pix(*self.wcs.getCentreWCSCoords())
