@@ -7,3 +7,4 @@ MANIFEST
 .venv*/
 dist/
 test/bla.restored.fits
+test/bla.fits
