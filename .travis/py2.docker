@@ -6,7 +6,7 @@ RUN docker-apt-install \
     python-astropy \
     python-astro-kittens \
     python-astlib \
-    python-pip \
+    python-pip
 ADD . /code
 RUN pip install /code
 RUN python2 /usr/local/bin/tigger-convert /code/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
