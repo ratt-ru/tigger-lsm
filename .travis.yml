@@ -1,13 +1,20 @@
 language: python
+matrix:
+  include:
+  - env: TARGET=py2
+  - env: TARGET=py3
+  - env: TARGET=pep8
+  - env: TARGET=mypy
+  allow_failures:
+  - env: TARGET=pep8
+  - env: TARGET=mypy
 sudo: required
 services:
-- docker
-python:
-- '2.7'
+ - docker
 install:
-- docker build . -t ska-sa/tigger-lsm
+  - true
 script:
-- true
+- docker build . -f .travis/${TARGET}.docker
 deploy:
   provider: pypi
   user: gijzelaerr
