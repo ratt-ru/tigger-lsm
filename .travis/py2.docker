@@ -13,6 +13,7 @@ RUN docker-apt-install \
     makems \
     meqtrees-timba \
     python-casacore \
+    meqtrees-cattery \
     libboost-python-dev
 
 ADD . /code
