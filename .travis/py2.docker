@@ -10,7 +10,8 @@ RUN docker-apt-install \
 
 RUN docker-apt-install \
     wget \
-    makems
+    makems \
+    meqtrees-timba
 
 ADD . /code
 RUN pip install /code

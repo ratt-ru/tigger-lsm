@@ -6,6 +6,12 @@ RUN docker-apt-install \
     python3-astropy \
     python3-astlib \
     python3-pip
+
+RUN docker-apt-install \
+    wget \
+    makems \
+    meqtrees-timba
+    
 ADD . /code
 RUN pip3 install /code
 RUN python3 /usr/local/bin/tigger-convert -f /code/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
