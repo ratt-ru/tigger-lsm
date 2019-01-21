@@ -22,6 +22,7 @@ RUN echo "the next command should not print 1"
 RUN wc -l /tmp/output.txt
 
 # get the test from pyxis
+WORKDIR /code
 RUN wget https://github.com/ska-sa/pyxis/archive/v1.6.2.tar.gz
 RUN tar -xvf v1.6.2.tar.gz
 WORKDIR /code/pyxis-1.6.2
