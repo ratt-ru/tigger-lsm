@@ -7,6 +7,11 @@ RUN docker-apt-install \
     python-astro-kittens \
     python-astlib \
     python-pip
+
+RUN docker-apt-install \
+    wget \
+    makems
+
 ADD . /code
 RUN pip install /code
 RUN python2 /usr/local/bin/tigger-convert /code/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
@@ -15,3 +20,17 @@ RUN python2 /usr/local/bin/tigger-tag /code/test/3C147-HI6.refmodel.lsm.html gij
 RUN python2 /usr/local/bin/tigger-restore -f /code/test/bla.fits /code/test/3C147-HI6.refmodel.lsm.html
 RUN echo "the next command should not print 1"
 RUN wc -l /tmp/output.txt
+
+# get the test from pyxis
+RUN wget https://github.com/ska-sa/pyxis/archive/v1.6.2.tar.gz
+RUN tar -xvf v1.6.2.tar.gz
+WORKDIR /code/pyxis-1.6.2
+RUN pip install -U .
+
+# run test when built
+RUN pip install nose
+WORKDIR /usr/local/lib/python2.7/dist-packages/Pyxis/recipies/meqtrees-batch-test
+RUN python2.7 -m "nose"
+
+ENTRYPOINT ["meqtree-pipeliner.py"]
+CMD ["--help"]
