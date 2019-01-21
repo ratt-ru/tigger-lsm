@@ -10,7 +10,9 @@ RUN docker-apt-install \
 RUN docker-apt-install \
     wget \
     makems \
-    meqtrees-timba
+    meqtrees-timba \
+    python-casacore \
+    libboost-python-dev
     
 ADD . /code
 RUN pip3 install /code
