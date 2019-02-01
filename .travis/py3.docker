@@ -12,9 +12,14 @@ RUN docker-apt-install \
     makems \
     meqtrees-timba \
     python-casacore \
-    meqtrees-cattery \
+    casacore-dev \
+    wcslib-dev \
+    libcfitsio-dev \
     libboost-python-dev
-    
+
+RUN pip3 install owlcat
+RUN pip3 install meqtrees-cattery
+
 ADD . /code
 RUN pip3 install /code
 RUN python3 /usr/local/bin/tigger-convert -f /code/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
