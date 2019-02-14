@@ -124,7 +124,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
     def get_ang_field(name, units=ANGULAR_UNITS):
         column = err_column = colunit = errunit = None
         units = units or ANGULAR_UNITS
-        for unit, scale in units.items():
+        for unit, scale in list(units.items()):
             if column is None:
                 column = format.get("%s_%s" % (name, unit))
                 if column is not None:
@@ -172,7 +172,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 # format_str = " ".join(fields)
             # get list of custom attributes from format
             custom_attrs = []
-            for name, col in format.items():
+            for name, col in list(format.items()):
                 if name.startswith(":"):
                     m = re.match("^:(bool|int|float|complex|str):([\w]+)$", name)
                     if not m:

@@ -73,7 +73,7 @@ class ModelTagSet(ModelItem):
             markup += "mdlattr=%s " % attrname
         markup += ">"
         # write mandatory attributes
-        for name, tt in self.tags.items():
+        for name, tt in list(self.tags.items()):
             markup += self.renderAttrMarkup(name, tt, tag="TR", mandatory=True)
         # closing tag
         markup += "</%s>" % tag
@@ -109,7 +109,7 @@ class Source(ModelItem):
         if iapp is not None:
             return iapp
         else:
-            print(self.flux)
+            print((self.flux))
             return getattr(self.flux, 'I', 0.)
 
     def get_attr(self, attr, default=None):

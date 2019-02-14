@@ -79,7 +79,7 @@ def load(filename, center=None, **kw):
         ra = hdr['CRVAL1'] * _units[hdr.get('CUNIT1', 'DEG').strip()]
         dec = hdr['CRVAL2'] * _units[hdr.get('CUNIT2', 'DEG').strip()]
 
-        print("Using FITS image centre (%.4f, %.4f deg) as field centre" % (ra / DEG, dec / DEG))
+        print(("Using FITS image centre (%.4f, %.4f deg) as field centre" % (ra / DEG, dec / DEG)))
         center = ra, dec
 
     # now process file line-by-line

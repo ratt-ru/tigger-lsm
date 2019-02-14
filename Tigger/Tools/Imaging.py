@@ -83,7 +83,7 @@ def fitPsf(filename, cropsize=None):
         iy = numpy.where(psf[nx // 2, :] < 0)[0]
         iy0 = max(iy[iy < ny // 2])
         iy1 = min(iy[iy > ny // 2])
-        print(ix0, ix1, iy0, iy1)
+        print((ix0, ix1, iy0, iy1))
         psf = psf[ix0:ix1, iy0:iy1]
     psf[psf < 0] = 0
 
@@ -490,7 +490,7 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
             # model_stp will be [0,-1,-1,1]
             model_stp = [(model_stokes.index(st) if st in model_stokes else -1) for st in stokes]
             if model_stp[0] < 0:
-                print("Warning: model image %s lacks Stokes %s, skipping." % (src.shape.filename, model_stokes[0]))
+                print(("Warning: model image %s lacks Stokes %s, skipping." % (src.shape.filename, model_stokes[0])))
                 continue
             # figure out whether the images overlap at all
             # in the trivial case, both images have the same WCS, so no resampling is needed
@@ -513,8 +513,8 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
                     continue
             # warn about ignored model axes (e.g. when model has frequency and our output doesn't)
             if removed_model_axes:
-                print("Warning: model image %s has one or more axes that are not present in the output image:" % src.shape.filename)
-                print("  taking the first plane along (%s)." % (",".join(removed_model_axes)))
+                print(("Warning: model image %s has one or more axes that are not present in the output image:" % src.shape.filename))
+                print(("  taking the first plane along (%s)." % (",".join(removed_model_axes))))
             # evaluate convolution kernel for this model scale, if not already cached
             conv_kernel = conv_kernels.get((modelproj.xscale, modelproj.yscale), None)
             if conv_kernel is None:

@@ -85,7 +85,7 @@ def load(filename, center=None, **kw):
             ra, dec = lm_to_radec(l, m, *center)
             pos = ModelClasses.Position(ra, dec)
         except Exception as exc:
-            print("CC %d: error converting coordinates (%s), skipping" % (num, str(exc)))
+            print(("CC %d: error converting coordinates (%s), skipping" % (num, str(exc))))
             continue
         flux = ModelClasses.Flux(i)
         # now create a source object

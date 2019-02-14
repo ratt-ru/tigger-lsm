@@ -46,7 +46,7 @@ def _initFormats():
                 importlib.import_module("Tigger.Models.Formats." + format)
             except:
                 traceback.print_exc()
-                print("Error loading support for format '%s', see above. Format will not be available." % format)
+                print(("Error loading support for format '%s', see above. Format will not be available." % format))
         _FormatsInitialized = True
 
 
@@ -78,7 +78,7 @@ def getFormatExtensions(name):
 def determineFormat(filename):
     """Tries to determine file format by filename. Returns name,import_func,export_func,docstring if found, None,None,None,None otherwise."""
     _initFormats()
-    for name, (import_func, export_func, doc, extensions) in Formats.items():
+    for name, (import_func, export_func, doc, extensions) in list(Formats.items()):
         for ext in extensions:
             if filename.endswith(ext):
                 return name, import_func, export_func, doc
@@ -117,7 +117,7 @@ def load(filename, format=None, verbose=True):
     if not import_func:
         raise TypeError("Unknown model format '%s'" % format)
     if verbose:
-        print("Loading %s: %s" % (filename, doc))
+        print(("Loading %s: %s" % (filename, doc)))
     return import_func(filename)
 
 
@@ -125,5 +125,5 @@ def save(model, filename, format=None, verbose=True):
     """Saves a sky model."""
     name, import_func, export_func, doc = resolveFormat(filename, format)
     if verbose:
-        print("Saving %s: %s" % (filename, doc))
+        print(("Saving %s: %s" % (filename, doc)))
     return export_func(model, filename)
