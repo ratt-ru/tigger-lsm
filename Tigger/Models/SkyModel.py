@@ -109,7 +109,6 @@ class Source(ModelItem):
         if iapp is not None:
             return iapp
         else:
-            print(self.flux)
             return getattr(self.flux, 'I', 0.)
 
     def get_attr(self, attr, default=None):
