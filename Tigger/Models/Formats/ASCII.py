@@ -202,9 +202,12 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                     polpa_field, polpa_scale = format.get('pol_pa_rad', None), 1
             # fields for extent parameters
             extent_fields = [get_ang_field(x, ANGULAR_UNITS) for x in ('emaj', 'emin', 'pa')]
+            shapelet_fields = [get_ang_field(x, ANGULAR_UNITS) for x in ('sbetal', 'sbetam')]
             # all three must be present, else ignore
             if any([x[0] is None for x in extent_fields]):
                 extent_fields = None
+            if any([x[0] is None for x in shapelet_fields]):
+                shapelet_fields = None
             # fields for reference freq and RM and SpI
             freq0_field = format.get('freq0', None)
             rm_field, rm_err_field = get_field('rm')
@@ -307,16 +310,22 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                     if any([x is not None for x in spi_err]):
                         spectrum.spi_err = spi_err
             # see if we have extent parameters
-            ex = ey = pa = 0
+            ex = ey = pa = beta_l = beta_m = shapelet_coeffs_l = shapelet_coeffs_m = 0
             if extent_fields:
                 ex, ey, pa = [(getval(x[0], x[1]) or 0) for x in extent_fields]
                 extent_errors = [getval(x[2], x[3]) for x in extent_fields]
+            elif shapelet_fields:
+                (scoeffsl_field, _), (scoeffsm_field, _) = get_field("scoeffsl"), get_field("scoeffsm")
+                beta_l, beta_m = [(getval(s[0]) or 0) for s in shapelet_fields]
+                shapelet_coeffs_l, shapelet_coeffs_m = getval(scoeffsl_field), getval(scoeffsm_field)
             # form up shape object
             if (ex or ey) and max(ex, ey) >= min_extent:
                 shape = ModelClasses.Gaussian(ex, ey, pa)
                 for ifield, field in enumerate(['ex', 'ey', 'pa']):
                     if extent_errors[ifield] is not None:
                         shape.setAttribute(field + "_err", extent_errors[ifield])
+            if (beta_l or beta_m or shapelet_coeffs_l or shapelet_coeffs_m):
+                shape = ModelClasses.Shapelet(beta_l, beta_m, shapelet_coeffs_l, shapelet_coeffs_m)
             else:
                 shape = None
             # get tags
