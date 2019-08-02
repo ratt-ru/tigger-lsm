@@ -445,7 +445,7 @@ class Gaussian(Shape):
 class Shapelet(Shape):
     typecode = "Sha"
 
-    mandatory_attrs = ["sbetal", "sbetam", "scoeffsl", "scoeffsm"]
+    mandatory_attrs = ["sbetal", "sbetam", "shapelet_coeffs"]
     optional_attrs = dict(ex_err=None, ey_err=None, pa_err=None)
 
     def getShape(self):

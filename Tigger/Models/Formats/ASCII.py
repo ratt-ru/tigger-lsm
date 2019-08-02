@@ -139,6 +139,19 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
     def getval(num, scale=1):
         return None if (num is None or len(fields) <= num) else float(fields[num]) * scale
 
+    def getval_list(num, scale=1):
+        return None if (num is None or len(fields) <= num) else [float(x) * scale for x in fields[num].split(',')]
+    
+    def triangular_index(val):
+        print("IN TRIANGULAR INDEX")
+        n = 1
+        x = n
+        print("n, x", n, x)
+        while x < val:
+            n += 1
+            x += n
+        return n
+
     # now process file line-by-line
     linenum = 0
     format_str = ''
@@ -315,9 +328,23 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 ex, ey, pa = [(getval(x[0], x[1]) or 0) for x in extent_fields]
                 extent_errors = [getval(x[2], x[3]) for x in extent_fields]
             elif shapelet_fields:
-                (scoeffsl_field, _), (scoeffsm_field, _) = get_field("scoeffsl"), get_field("scoeffsm")
+                (scoeffs_field, _) = get_field("shapelet_coeffs")
                 beta_l, beta_m = [(getval(s[0]) or 0) for s in shapelet_fields]
-                shapelet_coeffs_l, shapelet_coeffs_m = getval(scoeffsl_field), getval(scoeffsm_field)
+                shapelet_coeffs_list = [float(x) for x in fields[scoeffs_field].split(',')] #getval_list(scoeffs_field)
+
+                list_len = triangular_index(len(shapelet_coeffs_list))
+                shapelet_coeffs = [[0.0 for _ in range(list_len)] for _ in range(list_len)]
+                max_val = 1
+                i_ind = 0
+                j_ind = 0
+                for val in shapelet_coeffs_list:
+                    shapelet_coeffs[i_ind][j_ind] = val
+                    i_ind -= 1
+                    j_ind += 1
+                    if i_ind < 0:
+                        i_ind = max_val
+                        j_ind = 0
+                        max_val += 1
             # form up shape object
             if (ex or ey) and max(ex, ey) >= min_extent:
                 shape = ModelClasses.Gaussian(ex, ey, pa)
@@ -325,7 +352,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                     if extent_errors[ifield] is not None:
                         shape.setAttribute(field + "_err", extent_errors[ifield])
             if (beta_l or beta_m or shapelet_coeffs_l or shapelet_coeffs_m):
-                shape = ModelClasses.Shapelet(beta_l, beta_m, shapelet_coeffs_l, shapelet_coeffs_m)
+                shape = ModelClasses.Shapelet(beta_l, beta_m, shapelet_coeffs)
             else:
                 shape = None
             # get tags
