@@ -34,6 +34,7 @@ from Tigger import Coordinates
 from Tigger.Models import ModelClasses
 from Tigger.Models import SkyModel
 from Tigger.Models.Formats import dprint, dprintf
+import numpy as np
 
 DefaultDMSFormat = dict(name=0,
                         ra_h=1, ra_m=2, ra_s=3, dec_d=4, dec_m=5, dec_s=6,
@@ -141,16 +142,6 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
 
     def getval_list(num, scale=1):
         return None if (num is None or len(fields) <= num) else [float(x) * scale for x in fields[num].split(',')]
-    
-    def triangular_index(val):
-        print("IN TRIANGULAR INDEX")
-        n = 1
-        x = n
-        print("n, x", n, x)
-        while x < val:
-            n += 1
-            x += n
-        return n
 
     # now process file line-by-line
     linenum = 0
@@ -332,7 +323,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 beta_l, beta_m = [(getval(s[0]) or 0) for s in shapelet_fields]
                 shapelet_coeffs_list = [float(x) for x in fields[scoeffs_field].split(',')] #getval_list(scoeffs_field)
 
-                list_len = triangular_index(len(shapelet_coeffs_list))
+                list_len = np.max(np.tril_indices(len(shapelet_coeffs_list)))
                 shapelet_coeffs = [[0.0 for _ in range(list_len)] for _ in range(list_len)]
                 max_val = 1
                 i_ind = 0
