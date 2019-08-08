@@ -142,6 +142,14 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
 
     def getval_list(num, scale=1):
         return None if (num is None or len(fields) <= num) else [float(x) * scale for x in fields[num].split(',')]
+    
+    def upper_triangle_len(val):
+        n = 1
+        x = n
+        while x < val:
+            n += 1
+            x += n
+        return n
 
     # now process file line-by-line
     linenum = 0
@@ -321,21 +329,27 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
             elif shapelet_fields:
                 (scoeffs_field, _) = get_field("shapelet_coeffs")
                 beta_l, beta_m = [(getval(s[0]) or 0) for s in shapelet_fields]
-                shapelet_coeffs_list = [float(x) for x in fields[scoeffs_field].split(',')] #getval_list(scoeffs_field)
-
-                list_len = np.max(np.tril_indices(len(shapelet_coeffs_list)))
-                shapelet_coeffs = [[0.0 for _ in range(list_len)] for _ in range(list_len)]
-                max_val = 1
-                i_ind = 0
-                j_ind = 0
-                for val in shapelet_coeffs_list:
-                    shapelet_coeffs[i_ind][j_ind] = val
-                    i_ind -= 1
-                    j_ind += 1
-                    if i_ind < 0:
-                        i_ind = max_val
-                        j_ind = 0
-                        max_val += 1
+                scoeffs = fields[scoeffs_field]
+                shapelet_coeffs_list = None
+                shapelet_coeffs = None
+                if ',' in scoeffs:
+                    shapelet_coeffs_list = [float(x) for x in scoeffs.split(',')] #getval_list(scoeffs_field)
+                    sl_len = len(shapelet_coeffs_list)
+                    list_len = upper_triangle_len(sl_len)
+                    shapelet_coeffs = [[0.0 for _ in range(list_len)] for _ in range(list_len)]
+                    max_val = 1
+                    i_ind = 0
+                    j_ind = 0
+                    for val in shapelet_coeffs_list:
+                        shapelet_coeffs[i_ind][j_ind] = val
+                        i_ind -= 1
+                        j_ind += 1
+                        if i_ind < 0:
+                            i_ind = max_val
+                            j_ind = 0
+                            max_val += 1
+                else:
+                    shapelet_coeffs = [[float(scoeffs)]]
             # form up shape object
             if (ex or ey) and max(ex, ey) >= min_extent:
                 shape = ModelClasses.Gaussian(ex, ey, pa)
