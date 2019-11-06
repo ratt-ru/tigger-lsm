@@ -121,12 +121,12 @@ class ModelIndexParser(HTMLParser):
         mdlval = attrs.get('mdlval')
         dprintf(3, "model item type %s, attribute %s, inline value %s\n", mdltype, mdlattr, mdlval)
         if mdlattr and not self.objstack:
-            dprintf(0, "WARNING: attribute %s at top level, ignoring\n", mdlattr)
+            dprintf(3, "WARNING: attribute %s at top level, ignoring\n", mdlattr)
             return
         # Now look up the class in our globals, or in ModelClasses
         typeobj = ModelClasses.AtomicTypes.get(mdltype) or ModelClasses.__dict__.get(mdltype)
         if not callable(typeobj):
-            dprintf(0, "WARNING: unknown object type %s, ignoring\n", mdltype)
+            dprintf(3, "WARNING: unknown object type %s, ignoring\n", mdltype)
             return
         # see if object value is inlined
         if mdlval is not None:
@@ -134,7 +134,7 @@ class ModelIndexParser(HTMLParser):
                 obj = typeobj(eval(mdlval))
             except:
                 traceback.print_exc()
-                dprintf(0, "WARNING: failed to create object of type %s from string value '%s', ignoring\n", mdltype,
+                dprintf(3, "WARNING: failed to create object of type %s from string value '%s', ignoring\n", mdltype,
                         mdlval)
                 return
             self.add_object(mdlattr, obj)
