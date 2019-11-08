@@ -924,7 +924,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                                         ispiVal + spi, beamRefFreq))
 
                         if options.verbose:
-                            print(("%s: beamgain" % src.name), bg, "spi", spi, "clipped" if nobeam else ""
+                            print(("%s: beamgain" % src.name), bg, "spi", spi, "clipped" if nobeam else "")
                         #            if spiBg is not None:
                         #              print src.name,repr(freqgrid),repr(spiBg.mean(0))
 
