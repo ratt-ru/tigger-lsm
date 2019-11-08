@@ -27,6 +27,7 @@
 import math
 import sys
 
+import Cattery.Meow.Context
 import Cattery.Meow as Meow
 import os.path
 from Cattery.Meow.MeqMaker import SourceSubsetSelector
@@ -139,7 +140,7 @@ class TiggerSkyModel(object):
         import functools
         from past.builtins import cmp
         from functools import cmp_to_key
-        sources = sorted(self.lsm.sources, key=cmp_to_key(lambda a, b: cmp(a.brightness(), b.brightness())))
+        sources = sorted(self.lsm.sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
 
         # extract subset, if specified
         sources = SourceSubsetSelector.filter_subset(self.lsm_subset, sources, self._getTagValue)
