@@ -135,8 +135,6 @@ class TiggerSkyModel(object):
         if self.lsm is None:
             self.lsm = Tigger.load(self.filename)
         
-        if not isinstance(self.lsm, SkyModel):
-            raise ValueError("Error while loading lsm")
         # sort by brightness
         import functools
         from past.builtins import cmp

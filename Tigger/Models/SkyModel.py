@@ -341,7 +341,7 @@ class SkyModel(ModelItem):
         # sort in order of priority (high apply to low apply)
         from past.builtins import cmp
         from functools import cmp_to_key   
-        styles.sort(key=cmp_to_key(lambda a, b: cmp(a.apply, b.apply)))
+        styles.sort(key=cmp_to_key(lambda a, b: cmp(b.apply, a.apply)))
         # "show_plot" attribute: if at least one group is showing explicitly, show
         # else if at least one group is hiding explicitly, hide
         # else use default setting
@@ -431,7 +431,7 @@ class SkyModel(ModelItem):
         # sort by brightness
         from past.builtins import cmp
         from functools import cmp_to_key
-        srclist0 = sorted(self.sources, key=cmp_to_key(lambda a, b: cmp(a.brightness(), b.brightness())))
+        srclist0 = sorted(self.sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
         all = set([src.name for src in srclist0])
         srcs = set()
         for ispec, spec in enumerate(re.split("\s+|,", selection)):
