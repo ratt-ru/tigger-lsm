@@ -23,13 +23,13 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>,
 # or write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+from __future__ import absolute_import, division, print_function
 import math
 import sys
-import Cattery.Meow.Context
-import Cattery.Meow.OptionTools
-import Cattery.Meow.ParmGroup
-import Cattery.Meow as Meow
+
+# cattery has been appended to the path at this point
+import Meow
+
 import os.path
 from Cattery.Meow.MeqMaker import SourceSubsetSelector
 from Timba.TDL import TDLCompileOptions, TDLRuntimeOptions, TDLOption, TDLFileSelect, TDLMenu
