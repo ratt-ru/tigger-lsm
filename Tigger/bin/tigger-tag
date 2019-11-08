@@ -47,7 +47,7 @@ def transfer_tags(fromlsm, lsm, output, tags, tolerance, tigger):
     """
     # now, set dE tags on sources
     tagset = frozenset(tags.split())
-    print(("Transferring tags %s from %s to %s (%.2f\" tolerance)" % (",".join(tagset), fromlsm, lsm, tolerance)))
+    print("Transferring tags %s from %s to %s (%.2f\" tolerance)" % (",".join(tagset), fromlsm, lsm, tolerance))
 
     refmodel = tigger.load(fromlsm)
     model = tigger.load(lsm)
@@ -60,8 +60,8 @@ def transfer_tags(fromlsm, lsm, output, tags, tolerance, tigger):
                 if tagval is not None:
                     if src.getTag(tag, None) != tagval:
                         src.setTag(tag, tagval)
-                        print(("setting tag %s=%s on source %s (from reference source %s)" % (
-                        tag, tagval, src.name, src0.name)))
+                        print("setting tag %s=%s on source %s (from reference source %s)" % (
+                        tag, tagval, src.name, src0.name))
     model.save(output)
 
 

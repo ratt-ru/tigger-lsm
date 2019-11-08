@@ -91,7 +91,7 @@ def angular_dist_pos_angle2(ra1, dec1, ra2, dec2):
     x = cosa * sind0 - sind * cosd0
     y = sina
     z = cosa * cosd0 + sind * sind0
-    print((x, y, z))
+    print(x, y, z)
     PA = numpy.arctan2(y, -x)
     R = numpy.arccos(z)
 
@@ -108,7 +108,7 @@ def angular_dist_pos_angle2(ra1, dec1, ra2, dec2):
     x = cosa * sind0 - sind * cosd0
     y = sina
     z = cosa * cosd0 + sind * sind0
-    print((x, y, z))
+    print(x, y, z)
     PA = numpy.arctan2(y, -x)
     R = numpy.arccos(z)
     return R, PA
