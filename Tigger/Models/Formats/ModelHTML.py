@@ -42,7 +42,7 @@ DefaultExtension = "lsm.html"
 def save(model, filename, sources=None, **kw):
     if sources is None:
         sources = model.sources
-    fobj = file(filename, 'w')
+    fobj = open(filename, 'w')
     fobj.write("""<HTML><BODY mdltype=SkyModel>\n""")
     if model.name is not None:
         fobj.write(model.renderAttrMarkup('name', model.name, tags='TITLE', verbose="Sky model: "))

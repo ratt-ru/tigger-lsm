@@ -393,7 +393,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
     if options.output_type != AUTO:
         output_type, dum, export_func, output_doc = Tigger.Models.Formats.getFormat(options.output_type)
         output_extensions = Tigger.Models.Formats.getFormatExtensions(options.output_type)
-        if not export_func or not extensions:
+        if not export_func:# or not extensions: #not defined @oms
             print("Output model type '%s' is not supported." % options.output_type)
             sys.exit(1)
 
@@ -952,7 +952,9 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
         print("Renaming sources using the COPART convention")
         typecodes = dict(Gau="G", FITS="F")
         # sort sources by decreasing flux
-        sources = sorted(sources, lambda a, b: cmp(b.brightness(), a.brightness()))
+        from past.builtins import cmp
+        from functools import cmp_to_key
+        sources = sorted(sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
         projection = Coordinates.Projection.SinWCS(*model.fieldCenter())
         # work out source clusters
         l = numpy.zeros(len(sources), float)
