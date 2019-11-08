@@ -928,15 +928,15 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                         #            if spiBg is not None:
                         #              print src.name,repr(freqgrid),repr(spiBg.mean(0))
 
-                    else:
-                        bg = pbexp(r, fq)
-                        src.setAttribute('beamgain', bg)
-                        if hasattr(src.flux, 'I'):
-                            src.setAttribute('Iapp', src.flux.I if options.app_to_int else src.flux.I * bg)
-                        for stokes in "IQUV":
-                            x = getattr(src.flux, stokes, None)
-                            if x is not None:
-                                setattr(src.flux, stokes, x / bg if options.app_to_int else x * bg)
+                        else:
+                            bg = pbexp(r, fq)
+                            src.setAttribute('beamgain', bg)
+                            if hasattr(src.flux, 'I'):
+                                src.setAttribute('Iapp', src.flux.I if options.app_to_int else src.flux.I * bg)
+                            for stokes in "IQUV":
+                                x = getattr(src.flux, stokes, None)
+                                if x is not None:
+                                    setattr(src.flux, stokes, x / bg if options.app_to_int else x * bg)
                     nsrc += 1
             if options.enable_plots:
                 pylab.legend()
