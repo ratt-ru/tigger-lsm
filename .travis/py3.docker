@@ -1,4 +1,4 @@
-FROM kernsuite/base:4
+FROM kernsuite/base:5
 RUN docker-apt-install \
     python3-setuptools \
     python3-numpy \
@@ -6,6 +6,20 @@ RUN docker-apt-install \
     python3-astropy \
     python3-astlib \
     python3-pip
+
+RUN docker-apt-install \
+    wget \
+    makems \
+    meqtrees-timba \
+    python-casacore \
+    casacore-dev \
+    wcslib-dev \
+    libcfitsio-dev \
+    libboost-python-dev
+
+RUN pip3 install owlcat
+RUN pip3 install meqtrees-cattery
+
 ADD . /code
 RUN pip3 install /code
 RUN python3 /usr/local/bin/tigger-convert -f /code/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
@@ -14,3 +28,18 @@ RUN python3 /usr/local/bin/tigger-tag /code/test/3C147-HI6.refmodel.lsm.html gij
 RUN python3 /usr/local/bin/tigger-restore -f /code/test/bla.fits /code/test/3C147-HI6.refmodel.lsm.html
 RUN echo "the next command should not print 1"
 RUN wc -l /tmp/output.txt
+
+# get the test from pyxis
+WORKDIR /code
+RUN wget https://github.com/ska-sa/pyxis/archive/v1.6.2.tar.gz
+RUN tar -xvf v1.6.2.tar.gz
+WORKDIR /code/pyxis-1.6.2
+RUN pip3 install -U .
+
+# run test when built
+RUN pip3 install nose
+WORKDIR /usr/local/lib/python3.6/dist-packages/Pyxis/recipies/meqtrees-batch-test
+RUN python3.6 -m "nose"
+
+ENTRYPOINT ["meqtree-pipeliner.py"]
+CMD ["--help"]

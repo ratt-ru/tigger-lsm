@@ -23,7 +23,7 @@
 # or write to the Free Software Foundation, Inc., 
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-
+from __future__ import print_function, division, absolute_import
 import math
 import re
 import sys
@@ -54,7 +54,7 @@ class CatalogLine(object):
         self._fields = fields
         if fields:
             # parse fields
-            for field, number in parser.field_number.items():
+            for field, number in list(parser.field_number.items()):
                 fval = fields[number].strip() if number < len(fields) else ''
                 if not fval:
                     fval = parser.field_default.get(field, '')
@@ -64,7 +64,7 @@ class CatalogLine(object):
             self.dec_rad = parser.getAngle(self, 'Dec', 'dech', 'decd', 'decm', 'decs')
         else:
             # else make empty line
-            for field in parser.field_number.keys():
+            for field in list(parser.field_number.keys()):
                 setattr(self, field, '')
 
     def setPosition(self, ra, dec):
@@ -77,7 +77,7 @@ class CatalogLine(object):
         """Converts into a string using the designated parser"""
         # build up dict of valid fields
         fields = {}
-        for field, num in self._parser.field_number.items():
+        for field, num in list(self._parser.field_number.items()):
             value = getattr(self, field, None)
             if value:
                 fields[num] = value

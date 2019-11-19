@@ -80,10 +80,10 @@ class PlotStyle(ModelClasses.ModelItem):
 
     def copy(self):
         return PlotStyle(
-            **dict([(attr, getattr(self, attr, default)) for attr, default in DefaultPlotAttrs.items()]))
+            **dict([(attr, getattr(self, attr, default)) for attr, default in list(DefaultPlotAttrs.items())]))
 
     def update(self, other):
-        for attr in DefaultPlotAttrs.keys():
+        for attr in list(DefaultPlotAttrs.keys()):
             val = getattr(other, attr, None)
             if val is not None and val != DefaultValue:
                 setattr(self, attr, val)
@@ -131,7 +131,7 @@ def makeSourceLabel(label, src):
         return ""
     global _label_keys
     lbl = label
-    for key, func in _label_keys.items():
+    for key, func in list(_label_keys.items()):
         if lbl.find(key) >= 0:
             lbl = lbl.replace(key, func(src))
     return lbl

@@ -23,16 +23,15 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>,
 # or write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+from __future__ import absolute_import, division, print_function
 import math
 import sys
 
+# cattery has been appended to the path at this point
 import Meow
-import Meow.Context
-import Meow.OptionTools
-import Meow.ParmGroup
+
 import os.path
-from Meow.MeqMaker import SourceSubsetSelector
+from Cattery.Meow.MeqMaker import SourceSubsetSelector
 from Timba.TDL import TDLCompileOptions, TDLRuntimeOptions, TDLOption, TDLFileSelect, TDLMenu
 
 # find out where Tigger lives -- either it's in the path, or we add it
@@ -44,6 +43,7 @@ except:
 
 from Tigger.Models import ModelClasses
 from Tigger.Models.Formats import ModelHTML
+from Tigger.Models.SkyModel import SkyModel
 
 # this dict determines how source attributes are grouped into "parameter subgroups"
 _Subgroups = dict(I="I", Q="Q", U="U", V="V",
@@ -134,9 +134,12 @@ class TiggerSkyModel(object):
         # load the sky model
         if self.lsm is None:
             self.lsm = Tigger.load(self.filename)
-
+        
         # sort by brightness
-        sources = sorted(self.lsm.sources, lambda a, b: cmp(b.brightness(), a.brightness()))
+        import functools
+        from past.builtins import cmp
+        from functools import cmp_to_key
+        sources = sorted(self.lsm.sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
 
         # extract subset, if specified
         sources = SourceSubsetSelector.filter_subset(self.lsm_subset, sources, self._getTagValue)

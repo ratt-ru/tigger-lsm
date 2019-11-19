@@ -30,7 +30,7 @@ from . import PlotStyles
 from .ModelClasses import ModelItem
 from Tigger.Coordinates import angular_dist_pos_angle, DEG
 from functools import reduce
-
+import functools
 
 class ModelTag(ModelItem):
     mandatory_attrs = ["name"]
@@ -55,7 +55,9 @@ class ModelTagSet(ModelItem):
 
     def getAll(self):
         all = list(self.tags.values())
-        all.sort(lambda a, b: cmp(a.name, b.name))
+        from past.builtins import cmp
+        from functools import cmp_to_key
+        all.sort(key=cmp_to_key(lambda a, b: cmp(a.name(), b.name())))
         return all
 
     def addNames(self, names):
@@ -73,7 +75,7 @@ class ModelTagSet(ModelItem):
             markup += "mdlattr=%s " % attrname
         markup += ">"
         # write mandatory attributes
-        for name, tt in self.tags.items():
+        for name, tt in list(self.tags.items()):
             markup += self.renderAttrMarkup(name, tt, tag="TR", mandatory=True)
         # closing tag
         markup += "</%s>" % tag
@@ -109,7 +111,6 @@ class Source(ModelItem):
         if iapp is not None:
             return iapp
         else:
-            print(self.flux)
             return getattr(self.flux, 'I', 0.)
 
     def get_attr(self, attr, default=None):
@@ -338,7 +339,9 @@ class SkyModel(ModelItem):
         # get list of styles from  groupings to which this source belongs
         styles = [group.style for group in self.groupings if group.func(src)]
         # sort in order of priority (high apply to low apply)
-        styles.sort(lambda a, b: cmp(b.apply, a.apply))
+        from past.builtins import cmp
+        from functools import cmp_to_key   
+        styles.sort(key=cmp_to_key(lambda a, b: cmp(b.apply, a.apply)))
         # "show_plot" attribute: if at least one group is showing explicitly, show
         # else if at least one group is hiding explicitly, hide
         # else use default setting
@@ -426,7 +429,9 @@ class SkyModel(ModelItem):
         if not selection or selection.lower() == "all":
             return self.sources
         # sort by brightness
-        srclist0 = sorted(self.sources, lambda a, b: cmp(b.brightness(), a.brightness()))
+        from past.builtins import cmp
+        from functools import cmp_to_key
+        srclist0 = sorted(self.sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
         all = set([src.name for src in srclist0])
         srcs = set()
         for ispec, spec in enumerate(re.split("\s+|,", selection)):

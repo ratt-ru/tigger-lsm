@@ -23,7 +23,7 @@
 # or write to the Free Software Foundation, Inc., 
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-
+from __future__ import print_function, division, absolute_import
 import copy
 import math
 
@@ -83,7 +83,7 @@ class ModelItem(object):
                 type(value).__name__, attr, self.__class__.__name__))
             setattr(self, attr, value)
         # set optional attributes from keywords
-        for kw, default in self.optional_attrs.items():
+        for kw, default in list(self.optional_attrs.items()):
             value = kws.pop(kw, default)
             if not isinstance(value, AllowedTypesTuple):
                 raise TypeError("invalid type %s for attribute %s (class %s)" % (
@@ -92,7 +92,7 @@ class ModelItem(object):
         # set extra attributes, if any are left
         self._extra_attrs = set()
         if self.allow_extra_attrs:
-            for kw, value in kws.items():
+            for kw, value in list(kws.items()):
                 if not isinstance(value, AllowedTypesTuple):
                     raise TypeError("invalid type %s for attribute %s (class %s)" % (
                     type(value).__name__, kw, self.__class__.__name__))
@@ -154,7 +154,7 @@ class ModelItem(object):
     def getAttributes(self):
         """Returns list of all attributes (mandatory+optional+extra), as (attr,value) tuples"""
         attrs = [(attr, getattr(self, attr)) for attr in self.mandatory_attrs]
-        for attr, default in self.optional_attrs.items():
+        for attr, default in list(self.optional_attrs.items()):
             val = getattr(self, attr, default)
             if val != default:
                 attrs.append((attr, val))
@@ -457,7 +457,7 @@ startup_dprint(1, "end of class defs")
 # populate dict of AllowedTypes with all classes defined so far
 globs = list(globals().items())
 
-AllowedTypes = dict(iter(AtomicTypes.items()))
+AllowedTypes = dict(iter(list(AtomicTypes.items())))
 AllowedTypes['NoneType'] = type(None);  # this must be a type, otherwise isinstance() doesn't work
 for name, val in globs:
     if isinstance(val, type):

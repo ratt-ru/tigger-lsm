@@ -23,6 +23,7 @@
 # or write to the Free Software Foundation, Inc., 
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+from __future__ import print_function, division, absolute_import
 import importlib
 import traceback
 
@@ -78,7 +79,7 @@ def getFormatExtensions(name):
 def determineFormat(filename):
     """Tries to determine file format by filename. Returns name,import_func,export_func,docstring if found, None,None,None,None otherwise."""
     _initFormats()
-    for name, (import_func, export_func, doc, extensions) in Formats.items():
+    for name, (import_func, export_func, doc, extensions) in list(Formats.items()):
         for ext in extensions:
             if filename.endswith(ext):
                 return name, import_func, export_func, doc
