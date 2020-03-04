@@ -214,12 +214,10 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                     polpa_field, polpa_scale = format.get('pol_pa_rad', None), 1
             # fields for extent parameters
             extent_fields = [get_ang_field(x, ANGULAR_UNITS) for x in ('emaj', 'emin', 'pa')]
-            shapelet_fields = [get_ang_field(x, ANGULAR_UNITS) for x in ('sbetal', 'sbetam')]
-            # all three must be present, else ignore
-            if any([x[0] is None for x in extent_fields]):
+            shape_field = get_field("shapelet_coeffs")#[get_ang_field(x, ANGULAR_UNITS) for x in ('sbetal', 'sbetam')]
+            # all three must be present, else ignore. The pa field can be None, if there is a shapelet_coeffs field
+            if any([x[0] is None for x in extent_fields]) and (any([x[0] is None for x in extent_fields[:2]]) or shape_field[0] is None ):
                 extent_fields = None
-            if any([x[0] is None for x in shapelet_fields]):
-                shapelet_fields = None
             # fields for reference freq and RM and SpI
             freq0_field = format.get('freq0', None)
             rm_field, rm_err_field = get_field('rm')
@@ -323,12 +321,12 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                         spectrum.spi_err = spi_err
             # see if we have extent parameters
             ex = ey = pa = beta_l = beta_m = shapelet_coeffs_l = shapelet_coeffs_m = 0
-            if extent_fields:
+            if extent_fields and shape_field[0] is None:
                 ex, ey, pa = [(getval(x[0], x[1]) or 0) for x in extent_fields]
                 extent_errors = [getval(x[2], x[3]) for x in extent_fields]
-            elif shapelet_fields:
-                (scoeffs_field, _) = get_field("shapelet_coeffs")
-                beta_l, beta_m = [(getval(s[0]) or 0) for s in shapelet_fields]
+            elif extent_fields and shape_field:
+                scoeffs_field = shape_field[0]
+                beta_l, beta_m = [((getval(s[0], s[1]) * np.sqrt(2)) or 0) for s in extent_fields[:2]]
                 scoeffs = fields[scoeffs_field]
                 shapelet_coeffs_list = None
                 shapelet_coeffs = None
@@ -351,7 +349,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 else:
                     shapelet_coeffs = [[float(scoeffs)]]
             # form up shape object
-            if (ex or ey) and max(ex, ey) >= min_extent:
+            if (ex or ey) and max(ex, ey) >= min_extent and not (beta_l or beta_m):
                 shape = ModelClasses.Gaussian(ex, ey, pa)
                 for ifield, field in enumerate(['ex', 'ey', 'pa']):
                     if extent_errors[ifield] is not None:
