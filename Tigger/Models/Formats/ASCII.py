@@ -356,7 +356,7 @@ def load(filename, format=None, freq0=None, center_on_brightest=False, min_exten
                 for ifield, field in enumerate(['ex', 'ey', 'pa']):
                     if extent_errors[ifield] is not None:
                         shape.setAttribute(field + "_err", extent_errors[ifield])
-            if (beta_l or beta_m or shapelet_coeffs_l or shapelet_coeffs_m):
+            elif (beta_l or beta_m or shapelet_coeffs_l or shapelet_coeffs_m):
                 shape = ModelClasses.Shapelet(beta_l, beta_m, shapelet_coeffs)
             else:
                 shape = None
