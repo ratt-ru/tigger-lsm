@@ -96,6 +96,7 @@ class ModelItem(object):
                 if not isinstance(value, AllowedTypesTuple):
                     raise TypeError("invalid type %s for attribute %s (class %s)" % (
                     type(value).__name__, kw, self.__class__.__name__))
+                signal_name = PyQt5.Qt.pyqtSignal()
                 self.setAttribute(kw, value)
         elif kws:
             raise TypeError("unknown parameters %s in constructor of %s" % (
@@ -106,8 +107,8 @@ class ModelItem(object):
 
     def enableSignals(self):
         """Enables Qt signals for this object."""
-        import PyQt4.Qt
-        self._signaller = PyQt4.Qt.QObject()
+        import PyQt5.Qt
+        self._signaller = PyQt5.Qt.QObject()
 
     def signalsEnabled(self):
         return bool(self._signaller)
@@ -116,17 +117,17 @@ class ModelItem(object):
         """Connects SIGNAL from object to specified receiver slot. If reconnect is True, allows duplicate connections."""
         if not self._signaller:
             raise RuntimeError("ModelItem.connect() called before enableSignals()")
-        import PyQt4.Qt
+        import PyQt5.Qt
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
-            PyQt4.Qt.QObject.connect(self._signaller, PyQt4.Qt.SIGNAL(signal_name), receiver)
+            self._signaller.signal_name.connect(receiver)
 
     def emit(self, signal_name, *args):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        import PyQt4.Qt
-        self._signaller.emit(PyQt4.Qt.SIGNAL(signal_name), *args)
+        import PyQt5.Qt
+        self._signaller.signal_name.emit(*args)
 
     def registerClass(classobj):
         if not isinstance(classobj, type):

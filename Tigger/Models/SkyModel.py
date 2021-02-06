@@ -340,7 +340,7 @@ class SkyModel(ModelItem):
         styles = [group.style for group in self.groupings if group.func(src)]
         # sort in order of priority (high apply to low apply)
         from past.builtins import cmp
-        from functools import cmp_to_key   
+        from functools import cmp_to_key
         styles.sort(key=cmp_to_key(lambda a, b: cmp(b.apply, a.apply)))
         # "show_plot" attribute: if at least one group is showing explicitly, show
         # else if at least one group is hiding explicitly, hide
