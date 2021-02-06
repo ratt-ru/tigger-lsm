@@ -30,6 +30,8 @@ import math
 import numpy
 import os.path
 
+import PyQt5.Qt
+
 from Tigger import startup_dprint
 
 startup_dprint(1, "starting ModelClasses")
@@ -107,7 +109,6 @@ class ModelItem(object):
 
     def enableSignals(self):
         """Enables Qt signals for this object."""
-        import PyQt5.Qt
         self._signaller = PyQt5.Qt.QObject()
 
     def signalsEnabled(self):
@@ -117,7 +118,6 @@ class ModelItem(object):
         """Connects SIGNAL from object to specified receiver slot. If reconnect is True, allows duplicate connections."""
         if not self._signaller:
             raise RuntimeError("ModelItem.connect() called before enableSignals()")
-        import PyQt5.Qt
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
             self._signaller.signal_name.connect(receiver)
@@ -126,7 +126,6 @@ class ModelItem(object):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        import PyQt5.Qt
         self._signaller.signal_name.emit(*args)
 
     def registerClass(classobj):
