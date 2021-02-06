@@ -60,7 +60,7 @@ def load(filename, center=None, **kw):
     srclist = []
     dprint(1, "importing AIPS clean component table", filename)
     # read file
-    ff = file(filename)
+    ff = open(filename)
 
     if center is None:
         raise ValueError("field centre must be specified")

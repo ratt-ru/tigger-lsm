@@ -210,7 +210,7 @@ def load(filename, freq0=None, center_on_brightest=False, **kw):
     srclist = []
     dprint(1, "importing BBS source table", filename)
     # read file
-    ff = file(filename)
+    ff = open(filename)
     # first line must be a format string: extract it
     line0 = ff.readline().strip()
     match = re.match("#\s*\((.+)\)\s*=\s*format", line0)
