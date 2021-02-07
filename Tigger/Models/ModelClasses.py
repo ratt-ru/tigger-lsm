@@ -31,6 +31,8 @@ import numpy
 import os.path
 
 import PyQt5.Qt
+from PyQt5.Qt import QObject
+from PyQt5.Qt import pyqtSignal
 
 from Tigger import startup_dprint
 
@@ -40,6 +42,15 @@ DEG = 180 / math.pi
 
 AtomicTypes = dict(bool=bool, int=int, float=float, complex=complex, str=str, list=list, tuple=tuple, dict=dict,
                    NoneType=lambda x: None)
+
+
+class ModelSignals(QObject):
+    updated = pyqtSignal(object, object)
+    changeCurrentSource = pyqtSignal(object, object, object)
+    selected = pyqtSignal(object, object)
+
+    def __init__(self):
+        QObject.__init__(self)
 
 
 class ModelItem(object):
@@ -109,7 +120,7 @@ class ModelItem(object):
 
     def enableSignals(self):
         """Enables Qt signals for this object."""
-        self._signaller = PyQt5.Qt.QObject()
+        self._signaller = ModelSignals()
 
     def signalsEnabled(self):
         return bool(self._signaller)
@@ -120,13 +131,30 @@ class ModelItem(object):
             raise RuntimeError("ModelItem.connect() called before enableSignals()")
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
-            self._signaller.signal_name.connect(receiver)
+            print(f"ModelClasses connect signal_name {signal_name} and receiver {receiver}")
+            #self._signaller.signal_name.connect(receiver)
+            #PyQt5.Qt.QObject.connect(self._signaller, PyQt5.Qt.SIGNAL(signal_name), receiver)
+            #I AM HERE - add updated signal and connect to receiver; same for other calls
+            if signal_name == 'updated':
+                self._signaller.updated.connect(receiver)
+            elif signal_name == 'changeCurrentSource':
+                self._signaller.changeCurrentSource.connect(receiver)
+            elif signal_name == 'selected':
+                self._signaller.selected.connect(receiver)
 
     def emit(self, signal_name, *args):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        self._signaller.signal_name.emit(*args)
+        #self._signaller.signal_name.emit(*args)
+        print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
+        if signal_name == 'updated':
+            self._signaller.updated.emit(*args)
+        elif signal_name == 'changeCurrentSource':
+            self._signaller.changeCurrentSource.emit(*args)
+        elif signal_name == 'selected':
+            self._signaller.selected.emit(*args)
+        #self._signaller.emit(PyQt5.Qt.SIGNAL(signal_name), *args)
 
     def registerClass(classobj):
         if not isinstance(classobj, type):
