@@ -48,6 +48,8 @@ class ModelSignals(QObject):
     updated = pyqtSignal(object, object)
     changeCurrentSource = pyqtSignal(object, object, object)
     selected = pyqtSignal(object, object)
+    changeGroupingStyle = pyqtSignal(object, object)
+    changeGroupingVisibility = pyqtSignal(object, object)
 
     def __init__(self):
         QObject.__init__(self)
@@ -132,21 +134,22 @@ class ModelItem(object):
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
             print(f"ModelClasses connect signal_name {signal_name} and receiver {receiver}")
-            #self._signaller.signal_name.connect(receiver)
-            #PyQt5.Qt.QObject.connect(self._signaller, PyQt5.Qt.SIGNAL(signal_name), receiver)
-            #I AM HERE - add updated signal and connect to receiver; same for other calls
+            # PyQt4.Qt.QObject.connect(self._signaller, PyQt4.Qt.SIGNAL(signal_name), receiver)  # old code for reference
             if signal_name == 'updated':
                 self._signaller.updated.connect(receiver)
             elif signal_name == 'changeCurrentSource':
                 self._signaller.changeCurrentSource.connect(receiver)
             elif signal_name == 'selected':
                 self._signaller.selected.connect(receiver)
+            elif signal_name == 'changeGroupingStyle':
+                self._signaller.changeGroupingStyle.connect(receiver)
+            elif signal_name == 'changeGroupingVisibility':
+                self._signaller.changeGroupingVisibility.connect(receiver)
 
     def emit(self, signal_name, *args):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        #self._signaller.signal_name.emit(*args)
         print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
         if signal_name == 'updated':
             self._signaller.updated.emit(*args)
@@ -154,7 +157,11 @@ class ModelItem(object):
             self._signaller.changeCurrentSource.emit(*args)
         elif signal_name == 'selected':
             self._signaller.selected.emit(*args)
-        #self._signaller.emit(PyQt5.Qt.SIGNAL(signal_name), *args)
+        elif signal_name == 'changeGroupingStyle':
+            self._signaller.changeGroupingStyle.emit(*args)
+        elif signal_name == 'changeGroupingVisibility':
+            self._signaller.changeGroupingVisibility.emit(*args)
+        # self._signaller.emit(PyQt4.Qt.SIGNAL(signal_name), *args)  # old code for reference
 
     def registerClass(classobj):
         if not isinstance(classobj, type):
