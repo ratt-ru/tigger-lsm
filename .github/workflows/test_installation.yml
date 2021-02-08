@@ -39,6 +39,7 @@ jobs:
       run: |
         tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt -f
         tigger-convert /tmp/output.txt /tmp/output.lsm.html -f
-        tigger-make-brick $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html $GITHUB_WORKSPACE/test/bla.fits
+        cp $GITHUB_WORKSPACE/test/3C147tmp.fits .tmp
+        tigger-make-brick $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/3C147tmp.fits 
         tigger-tag $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html gijs
-        tigger-restore -f $GITHUB_WORKSPACE/test/bla.fits $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html
+        tigger-restore -f $GITHUB_WORKSPACE/test/3C147tmp.fits $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/restored.fits
