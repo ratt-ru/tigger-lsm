@@ -31,8 +31,9 @@ import sys
 from math import cos
 
 import os.path
-from astLib.astWCS import WCS
+from astropy.wcs import WCS
 from astropy.io import fits as pyfits
+import numpy as np
 
 import Tigger
 
@@ -51,6 +52,7 @@ if __name__ == '__main__':
 
     from Tigger.Tools import Imaging
     from Tigger.Models import SkyModel, ModelClasses
+    from Tigger.Coordinates import get_wcs_info
 
     # setup some standard command-line option parsing
     #
@@ -157,32 +159,29 @@ while the brick itself will be added (as a FITS image component), and a new sky 
         print("Contents of FITS image will be reset")
     else:
         print("Adding source(s) to FITS image")
-    # Parse header to figure out RA and DEC axes
-    ra_axis = dec_axis = None
-    for iaxis in range(1, hdr['NAXIS'] + 1):
-        name = hdr.get("CTYPE%d" % iaxis, '').upper()
-        if name.startswith("RA"):
-            ra_axis = iaxis
-            ra0pix = hdr["CRPIX%d" % iaxis] - 1
-        elif name.startswith("DEC"):
-            dec_axis = iaxis
-            dec0pix = hdr["CRPIX%d" % iaxis] - 1
+
+    wcs, refpix, refsky, ra_axis, dec_axis = get_wcs_info(hdr)
+
     if ra_axis is None or dec_axis is None:
         print("Can't find RA and/or DEC axis in this FITS image")
         sys.exit(1)
 
     # make WCS from header
-    wcs = WCS(hdr, mode='pyfits')
-    ra0, dec0 = wcs.pix2wcs(ra0pix, dec0pix)
+    ra0pix, dec0pix = refpix[ra_axis], refpix[dec_axis]
+    ra0, dec0 = refsky[ra_axis], refsky[dec_axis]
+
     print("Image reference pixel (%d,%d) is at %f,%f deg" % (ra0pix, dec0pix, ra0, dec0))
 
     # apply x/y pixel offset
     if options.x_offset or options.y_offset:
-        ra0, dec0 = wcs.pix2wcs(ra0pix + options.x_offset, dec0pix + options.y_offset)
+        refpix[ra_axis] = ra0pix = ra0pix + options.x_offset
+        refpix[dec_axis] = dec0pix = dec0pix + options.y_offset
+        refsky = wcs.wcs_pix2world([refpix], 0)[0]
+        ra0, dec0 = refsky[ra_axis], refsky[dec_axis]
         print("Applying x/y offset moves this to %f,%f deg" % (ra0, dec0))
-        hdr["CRVAL%d" % ra_axis] = ra0
-        hdr["CRVAL%d" % dec_axis] = dec0
-        wcs = WCS(hdr, mode='pyfits')
+        hdr["CRVAL%d" % (ra_axis+1)] = ra0
+        hdr["CRVAL%d" % (dec_axis+1)] = dec0
+        wcs = WCS(hdr)
 
     # insert sources
     Imaging.restoreSources(input_hdu, sources, 0, primary_beam=pbfunc, freq=freq)

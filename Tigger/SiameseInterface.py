@@ -23,6 +23,11 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>,
 # or write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+## flake8 gives errors on "Meq.Parm", since it doesn't know about how TDL forces the name to exist
+# flake8: noqa
+
 from __future__ import absolute_import, division, print_function
 import math
 import sys

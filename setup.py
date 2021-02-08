@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 __version__ = "1.6.1"
 
-requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future']
+requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future', 'python-casacore']
 
 scripts = [
     'Tigger/bin/tigger-convert',
