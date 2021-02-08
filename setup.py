@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future']
 
@@ -28,6 +28,7 @@ setup(
     extras_require=extras_require,
     scripts=scripts,
     package_data=package_data,
+    python_requires='>=3.0.0',
     description="Python libraries and command-line tools for manipulating Tigger-format LSMs",
     author="Oleg Smirnov",
     author_email="osmirnov@gmail.com",
