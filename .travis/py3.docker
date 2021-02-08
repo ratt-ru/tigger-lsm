@@ -104,14 +104,14 @@ RUN pyxis --help
 
 # run end to end test when built
 RUN pip3 install nose
-WORKDIR /src/pyxis/Pyxis/recipies/meqtrees-batch-test
+WORKDIR /src/pyxis/Pyxis/recipes/meqtrees-batch-test
 RUN python3 -m "nose"
 
 # test different catalog formats
 RUN python3 /usr/local/bin/tigger-convert /code/tigger-lsm/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt
-RUN python3 /usr/local/bin/tigger-make-brick /code/tigger-lsm/test/3C147-HI6.refmodel.lsm.html /code/test/bla.fits
+RUN python3 /usr/local/bin/tigger-make-brick /code/tigger-lsm/test/3C147-HI6.refmodel.lsm.html /code/tigger-lsm/test/bla.fits
 RUN python3 /usr/local/bin/tigger-tag /code/tigger-lsm/test/3C147-HI6.refmodel.lsm.html gijs
-RUN python3 /usr/local/bin/tigger-restore -f /code/tigger-lsm/test/bla.fits /code/test/3C147-HI6.refmodel.lsm.html
+RUN python3 /usr/local/bin/tigger-restore -f /code/tigger-lsm/test/bla.fits /code/tigger-lsm/test/3C147-HI6.refmodel.lsm.html
 
 ENTRYPOINT ["meqtree-pipeliner.py"]
 CMD ["--help"]
