@@ -333,19 +333,7 @@ class Projection(object):
         def lm(self, ra, dec):
             if not self.has_projection():
                 return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
-            if numpy.isscalar(ra) and numpy.isscalar(dec):
-                if ra - self.ra0 > math.pi:
-                    ra -= 2 * math.pi
-                if ra - self.ra0 < -math.pi:
-                    ra += 2 * math.pi
-                l, m = self.wcs.wcs2pix(ra / DEG, dec / DEG)
-            else:
-                if numpy.isscalar(ra):
-                    ra = numpy.array(ra)
-                ra[ra - self.ra0 > math.pi] -= 2 * math.pi
-                ra[ra - self.ra0 < -math.pi] += 2 * math.pi
-                lm = numpy.array(self.wcs.wcs2pix(ra / DEG, dec / DEG))
-                l, m = lm[..., 0], lm[..., 1]
+            l, m = super().lm(ra, dec)
             l = (self.xpix0 - l) * self.xscale
             m = (m - self.ypix0) * self.yscale
             return l, m
@@ -353,13 +341,7 @@ class Projection(object):
         def radec(self, l, m):
             if not self.has_projection():
                 return numpy.arcsin(-l), numpy.arcsin(m)
-            if numpy.isscalar(l) and numpy.isscalar(m):
-                ra, dec = self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale)
-            else:
-                radec = numpy.array(self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale))
-                ra = radec[..., 0]
-                dec = radec[..., 1]
-            return ra * DEG, dec * DEG
+            return super().radec(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale)
 
         def offset(self, dra, ddec):
             return dra, ddec
