@@ -48,6 +48,17 @@ jobs:
     - name: Test reverse conversion to .lsm.html models
       run: |
         tigger-convert /tmp/output.txt /tmp/output.lsm.html -f
+    - name: Test .gaul conversions
+      run: |
+        tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.lsm.html -f 
+        tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.txt -f --output-format "name ra_d dec_d i q u v spi rm emaj_s emin_s pa_d freq0"
+        diff $GITHUB_WORKSPACE/test/deep4.reference.txt /tmp/deep4.txt
+    - name: Test .AIPSCC conversions
+      run: |
+        gunzip <$GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.fits.gz >/tmp/3C147-L-A-CLEAN.fits
+        tigger-convert /tmp/3C147-L-A-CLEAN.fits /tmp/3C147-L-A-CLEAN.fits.lsm.html -f
+        tigger-convert /tmp/3C147-L-A-CLEAN.fits.lsm.html /tmp/3C147-L-A-CLEAN.txt -f --output-format "name ra_d dec_d i q u v"
+        zdiff $GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.txt.gz /tmp/3C147-L-A-CLEAN.txt
     - name: Testing tigger-restore and tigger-make-brick
       run: |
         cp $GITHUB_WORKSPACE/test/3C147tmp.fits /tmp
