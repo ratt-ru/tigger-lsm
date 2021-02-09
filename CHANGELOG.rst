@@ -2,7 +2,7 @@
 Tigger Changelog
 ================
 
-1.6.1
+1.7.0
 =====
 
 * Move from PyQt4 to PyQt5
