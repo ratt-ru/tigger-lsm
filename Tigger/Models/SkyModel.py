@@ -32,6 +32,7 @@ from Tigger.Coordinates import angular_dist_pos_angle, DEG
 from functools import reduce
 import functools
 
+
 class ModelTag(ModelItem):
     mandatory_attrs = ["name"]
     optional_attrs = dict([(attr, None) for attr in PlotStyles.StyleAttributes])

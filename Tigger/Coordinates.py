@@ -285,8 +285,8 @@ class Projection(object):
         def __eq__(self, other):
             """By default, two projections are the same if their classes match, and their ra0/dec0 match."""
             return type(self) is type(other) and (
-            self.ra0, self.dec0, self.xpix0, self.ypix0, self.xscale, self.yscale) == (
-                   other.ra0, other.dec0, other.xpix0, other.ypix0, other.xscale, other.yscale)
+                self.ra0, self.dec0, self.xpix0, self.ypix0, self.xscale, self.yscale) == (
+                other.ra0, other.dec0, other.xpix0, other.ypix0, other.xscale, other.yscale)
 
     class FITSWCS(FITSWCSpix):
         """FITS WCS projection, as determined by a FITS header. lm is renormalized to radians, l is reversed, 0,0 is at reference pixel."""
