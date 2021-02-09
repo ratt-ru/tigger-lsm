@@ -60,7 +60,7 @@ def load(filename, center=None, **kw):
     srclist = []
     dprint(1, "importing AIPS clean component table", filename)
     # read file
-    ff = file(filename)
+    ff = open(filename)
 
     if center is None:
         raise ValueError("field centre must be specified")
@@ -99,6 +99,9 @@ def load(filename, center=None, **kw):
     model.setFieldCenter(*center)
     # setup radial distances
     projection = Coordinates.Projection.SinWCS(*model.fieldCenter())
+    for src in model.sources:
+        l, m = projection.lm(src.pos.ra, src.pos.dec)
+        src.setAttribute('r', math.sqrt(l * l + m * m))
     return model
 
 

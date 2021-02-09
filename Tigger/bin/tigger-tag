@@ -369,7 +369,7 @@ Saves the result to an LSM file given by -o/--output.
     # save output
     if options.output:
         model.save(options.output)
-        print("Saved updated model to %s" % options, output)
+        print("Saved updated model to %s" % options.output)
     else:
         model.save(skymodel)
         print("Saved updated model")

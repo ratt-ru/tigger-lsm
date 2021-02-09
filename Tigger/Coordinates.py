@@ -31,7 +31,10 @@ startup_dprint(1, "start of Coordinates")
 
 import math
 import numpy
-from numpy import sin, cos
+import traceback
+import warnings
+import numpy as np
+from numpy import sin, cos, arcsin
 
 startup_dprint(1, "imported numpy")
 
@@ -58,15 +61,11 @@ import locale
 
 locale.setlocale(locale.LC_NUMERIC, 'C')
 
-try:
-    from astLib.astWCS import WCS
-    import PyWCSTools.wcs
-except ImportError:
-    print("Failed to import the astLib.astWCS and/or PyWCSTools module. Please install the astLib package (http://astlib.sourceforge.net/).")
-    raise
+from astropy.wcs import WCS, FITSFixedWarning
+import PyWCSTools.wcs
 
 startup_dprint(1, "imported WCS")
-
+warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 def angular_dist_pos_angle(ra1, dec1, ra2, dec2):
     """Computes the angular distance between the two points on a sphere, and
@@ -211,6 +210,21 @@ class _Projector(object):
         raise TypeError("radec() not yet implemented in projection %s" % type(self).__name__)
 
 
+def get_wcs_info(hdr):
+    naxis = hdr['NAXIS']
+    ra_axis = dec_axis = None
+    refpix = [hdr["CRPIX%d" % (iaxis+1)]-1 for iaxis in range(naxis)]
+    for iaxis in range(naxis):
+        name = hdr.get("CTYPE%d" % (iaxis+1), '').upper()
+        if name.startswith("RA"):
+            ra_axis = iaxis
+        elif name.startswith("DEC"):
+            dec_axis = iaxis
+    wcs = WCS(hdr)  
+    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]    
+    return wcs, refpix, refsky, ra_axis, dec_axis
+
+
 class Projection(object):
     """Projection is a container for the different projection classes.
     Each Projection class can be used to create a projection object: proj = Proj(ra0,dec0), with lm(ra,dec) and radec(l,m) methods.
@@ -224,15 +238,22 @@ class Projection(object):
             # attach to FITS file or header
             if isinstance(header, str):
                 header = pyfits.open(header)[0].header
-            else:
-                self.wcs = WCS(header, mode="pyfits")
+
             try:
-                ra0, dec0 = self.wcs.getCentreWCSCoords()
-                self.xpix0, self.ypix0 = self.wcs.wcs2pix(*self.wcs.getCentreWCSCoords())
-                self.xscale = self.wcs.getXPixelSizeDeg() * DEG
-                self.yscale = self.wcs.getYPixelSizeDeg() * DEG
+                self.wcs, self.refpix, self.refsky, self.ra_axis, self.dec_axis = get_wcs_info(header)
+                if self.ra_axis is None or self.dec_axis is None:
+                    raise RuntimeError("Missing RA or DEC axis")
+                ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
+                self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
+                refpix1 = self.refpix.copy()
+                refpix1[self.ra_axis] += 1
+                refpix1[self.dec_axis] += 1
+                delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
+                self.xscale = delta[self.ra_axis] * DEG
+                self.yscale = delta[self.dec_axis] * DEG
                 has_projection = True
-            except:
+            except Exception as exc:
+                traceback.print_exc()
                 print("No WCS in FITS file, falling back to pixel coordinates.")
                 ra0 = dec0 = self.xpix0 = self.ypix0 = 0
                 self.xscale = self.yscale = DEG / 3600
@@ -247,22 +268,37 @@ class Projection(object):
                     ra -= 2 * math.pi
                 if ra - self.ra0 < -math.pi:
                     ra += 2 * math.pi
-                return self.wcs.wcs2pix(ra / DEG, dec / DEG)
+                skyvec = self.refsky.copy()
+                skyvec[self.ra_axis] = ra / DEG
+                skyvec[self.dec_axis] = dec / DEG
+                pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0] 
+                return pixvec[self.ra_axis], pixvec[self.dec_axis]
             else:
                 if numpy.isscalar(ra):
                     ra = numpy.array(ra)
-                ra[ra - self.ra0 > math.pi] -= 2 * math.pi
-                ra[ra - self.ra0 < -math.pi] += 2 * math.pi
+                if numpy.isscalar(dec):
+                    dec = numpy.array(dec)
+                n = max(len(ra), len(dec))
+                skymat = numpy.array([self.refsky for _ in range(n)])
+                skymat[:, self.ra_axis] = ra / DEG
+                skymat[:, self.dec_axis] = dec / DEG
+                ra = skymat[:, self.ra_axis]
+                ra[ra - self.ra0 > 180] -= 360
+                ra[ra - self.ra0 < -180] += 360
                 ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
                 ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
-                lm = numpy.array(self.wcs.wcs2pix(ra / DEG, dec / DEG))
-                return lm[..., 0], lm[..., 1]
+                lm = self.wcs.wcs_world2pix(skymat, 0)
+                return lm[:, self.ra_axis], lm[:, self.dec_axis]
 
         def radec(self, l, m):
             if not self.has_projection():
                 return numpy.arcsin(l * self.xscale), numpy.arcsin(m * self.yscale)
             if numpy.isscalar(l) and numpy.isscalar(m):
-                ra, dec = self.wcs.pix2wcs(l, m)
+                pixvec = self.refpix.copy()
+                pixvec[self.ra_axis] = l
+                pixvec[self.dec_axis] = m
+                skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
+                ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
             else:
                 ## this is slow as molasses because of the way astLib.WCS implements the loop. ~120 seconds for 4M pixels
                 ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
@@ -280,7 +316,7 @@ class Projection(object):
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
-            return self.xpix0 - dra / self.xscale, self.ypix0 + ddec / self.xscale
+            return self.xpix0 + dra / self.xscale, self.ypix0 + ddec / self.xscale
 
         def __eq__(self, other):
             """By default, two projections are the same if their classes match, and their ra0/dec0 match."""
@@ -288,61 +324,42 @@ class Projection(object):
             self.ra0, self.dec0, self.xpix0, self.ypix0, self.xscale, self.yscale) == (
                    other.ra0, other.dec0, other.xpix0, other.ypix0, other.xscale, other.yscale)
 
-    class FITSWCS(FITSWCSpix):
-        """FITS WCS projection, as determined by a FITS header. lm is renormalized to radians, l is reversed, 0,0 is at reference pixel."""
 
-        def __init__(self, header):
-            """Constructor. Create from filename (treated as FITS file), or a FITS header object"""
-            Projection.FITSWCSpix.__init__(self, header)
+    ## OMS 9/2/2021: Retiring FITSWCS, as it was only being used as a base for SinWCS() before, so it's cleaner to do SinWCS directly.
+    ## There is one place that Tigger uses FITSWCS, but only to get the header info, not for coordinate conversions.
+
+    class SinWCS(FITSWCSpix):
+        """
+        A sin WCS projection centred on the given ra0/dec0 coordinates,
+        with 0,0 being the reference pixel, 
+        """
+
+        def __init__(self, ra0, dec0):
+            hdu = pyfits.PrimaryHDU()
+            hdu.header.set('NAXIS', 2)
+            hdu.header.set('NAXIS1', 3)
+            hdu.header.set('NAXIS2', 3)
+            hdu.header.set('CTYPE1', 'RA---SIN')
+            hdu.header.set('CDELT1', -1. / 60)
+            hdu.header.set('CRPIX1', 2)
+            hdu.header.set('CRVAL1', ra0 / DEG)
+            hdu.header.set('CUNIT1', 'deg     ')
+            hdu.header.set('CTYPE2', 'DEC--SIN')
+            hdu.header.set('CDELT2', 1. / 60)
+            hdu.header.set('CRPIX2', 2)
+            hdu.header.set('CRVAL2', dec0 / DEG)
+            hdu.header.set('CUNIT2', 'deg     ')
+            Projection.FITSWCSpix.__init__(self, hdu.header)
+            self._l0 = self.refpix[self.ra_axis]
+            self._m0 = self.refpix[self.dec_axis]
 
         def lm(self, ra, dec):
-            if not self.has_projection():
-                return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
-            if numpy.isscalar(ra) and numpy.isscalar(dec):
-                if ra - self.ra0 > math.pi:
-                    ra -= 2 * math.pi
-                if ra - self.ra0 < -math.pi:
-                    ra += 2 * math.pi
-                l, m = self.wcs.wcs2pix(ra / DEG, dec / DEG)
-            else:
-                if numpy.isscalar(ra):
-                    ra = numpy.array(ra)
-                ra[ra - self.ra0 > math.pi] -= 2 * math.pi
-                ra[ra - self.ra0 < -math.pi] += 2 * math.pi
-                lm = numpy.array(self.wcs.wcs2pix(ra / DEG, dec / DEG))
-                l, m = lm[..., 0], lm[..., 1]
-            l = (self.xpix0 - l) * self.xscale
-            m = (m - self.ypix0) * self.yscale
-            return l, m
+            l, m = super().lm(ra, dec)
+            return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
 
         def radec(self, l, m):
-            if not self.has_projection():
-                return numpy.arcsin(-l), numpy.arcsin(m)
-            if numpy.isscalar(l) and numpy.isscalar(m):
-                ra, dec = self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale)
-            else:
-                radec = numpy.array(self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale))
-                ra = radec[..., 0]
-                dec = radec[..., 1]
-            return ra * DEG, dec * DEG
+            return super().radec(arcsin(l / self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
 
         def offset(self, dra, ddec):
-            return dra, ddec
+            return sin(dra), sin(ddec)
 
-    @staticmethod
-    def SinWCS(ra0, dec0):
-        hdu = pyfits.PrimaryHDU()
-        hdu.header.set('NAXIS', 2)
-        hdu.header.set('NAXIS1', 3)
-        hdu.header.set('NAXIS2', 3)
-        hdu.header.set('CTYPE1', 'RA---SIN')
-        hdu.header.set('CDELT1', -1. / 60)
-        hdu.header.set('CRPIX1', 2)
-        hdu.header.set('CRVAL1', ra0 / DEG)
-        hdu.header.set('CUNIT1', 'deg     ')
-        hdu.header.set('CTYPE2', 'DEC--SIN')
-        hdu.header.set('CDELT2', 1. / 60)
-        hdu.header.set('CRPIX2', 2)
-        hdu.header.set('CRVAL2', dec0 / DEG)
-        hdu.header.set('CUNIT2', 'deg     ')
-        return Projection.FITSWCS(hdu.header)
