@@ -37,8 +37,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test conversion to .txt models
       run: |
-        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt -f
-        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.recentred.txt -f --center 85.5deg,49.9deg --rename
+        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt -f \
+          --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
+        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.recentred.txt -f --center 85.5deg,49.9deg --rename \
+          --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
         diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.reference.txt /tmp/output.txt
         diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.recentred.reference.txt /tmp/output.recentred.txt
     - name: Test reverse conversion to .lsm.html models
