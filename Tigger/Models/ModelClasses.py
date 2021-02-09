@@ -207,7 +207,7 @@ class ModelItem(object):
         """Returns copy of object. Copies all attributes."""
         attrs = self.optional_attrs.copy()
         attrs.update(self.getExtraAttributes())
-        attrs = copy.deepcopy(attrs, memodict)  # TODO - (raz) This cannot be correct if using default copy (and below)
+        attrs = copy.deepcopy(attrs, memodict)
         return self.__class__(*[copy.deepcopy(getattr(self, attr), memodict) for attr in self.mandatory_attrs],
                               **attrs)
 
