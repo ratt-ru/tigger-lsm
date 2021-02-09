@@ -33,7 +33,8 @@ import math
 import numpy
 import traceback
 import warnings
-from numpy import sin, cos
+import numpy as np
+from numpy import sin, cos, arcsin
 
 startup_dprint(1, "imported numpy")
 
@@ -315,7 +316,7 @@ class Projection(object):
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
-            return self.xpix0 - dra / self.xscale, self.ypix0 + ddec / self.xscale
+            return self.xpix0 + dra / self.xscale, self.ypix0 + ddec / self.xscale
 
         def __eq__(self, other):
             """By default, two projections are the same if their classes match, and their ra0/dec0 match."""
@@ -323,43 +324,42 @@ class Projection(object):
             self.ra0, self.dec0, self.xpix0, self.ypix0, self.xscale, self.yscale) == (
                    other.ra0, other.dec0, other.xpix0, other.ypix0, other.xscale, other.yscale)
 
-    class FITSWCS(FITSWCSpix):
-        """FITS WCS projection, as determined by a FITS header. lm is renormalized to radians, l is reversed, 0,0 is at reference pixel."""
 
-        def __init__(self, header):
-            """Constructor. Create from filename (treated as FITS file), or a FITS header object"""
-            Projection.FITSWCSpix.__init__(self, header)
+    ## OMS 9/2/2021: Retiring FITSWCS, as it was only being used as a base for SinWCS() before, so it's cleaner to do SinWCS directly.
+    ## There is one place that Tigger uses FITSWCS, but only to get the header info, not for coordinate conversions.
+
+    class SinWCS(FITSWCSpix):
+        """
+        A sin WCS projection centred on the given ra0/dec0 coordinates,
+        with 0,0 being the reference pixel, 
+        """
+
+        def __init__(self, ra0, dec0):
+            hdu = pyfits.PrimaryHDU()
+            hdu.header.set('NAXIS', 2)
+            hdu.header.set('NAXIS1', 3)
+            hdu.header.set('NAXIS2', 3)
+            hdu.header.set('CTYPE1', 'RA---SIN')
+            hdu.header.set('CDELT1', -1. / 60)
+            hdu.header.set('CRPIX1', 2)
+            hdu.header.set('CRVAL1', ra0 / DEG)
+            hdu.header.set('CUNIT1', 'deg     ')
+            hdu.header.set('CTYPE2', 'DEC--SIN')
+            hdu.header.set('CDELT2', 1. / 60)
+            hdu.header.set('CRPIX2', 2)
+            hdu.header.set('CRVAL2', dec0 / DEG)
+            hdu.header.set('CUNIT2', 'deg     ')
+            Projection.FITSWCSpix.__init__(self, hdu.header)
+            self._l0 = self.refpix[self.ra_axis]
+            self._m0 = self.refpix[self.dec_axis]
 
         def lm(self, ra, dec):
-            if not self.has_projection():
-                return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
             l, m = super().lm(ra, dec)
-            l = (self.xpix0 - l) * self.xscale
-            m = (m - self.ypix0) * self.yscale
-            return l, m
+            return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
 
         def radec(self, l, m):
-            if not self.has_projection():
-                return numpy.arcsin(-l), numpy.arcsin(m)
-            return super().radec(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale)
+            return super().radec(arcsin(l / self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
 
         def offset(self, dra, ddec):
-            return dra, ddec
+            return sin(dra), sin(ddec)
 
-    @staticmethod
-    def SinWCS(ra0, dec0):
-        hdu = pyfits.PrimaryHDU()
-        hdu.header.set('NAXIS', 2)
-        hdu.header.set('NAXIS1', 3)
-        hdu.header.set('NAXIS2', 3)
-        hdu.header.set('CTYPE1', 'RA---SIN')
-        hdu.header.set('CDELT1', -1. / 60)
-        hdu.header.set('CRPIX1', 2)
-        hdu.header.set('CRVAL1', ra0 / DEG)
-        hdu.header.set('CUNIT1', 'deg     ')
-        hdu.header.set('CTYPE2', 'DEC--SIN')
-        hdu.header.set('CDELT2', 1. / 60)
-        hdu.header.set('CRPIX2', 2)
-        hdu.header.set('CRVAL2', dec0 / DEG)
-        hdu.header.set('CUNIT2', 'deg     ')
-        return Projection.FITSWCS(hdu.header)

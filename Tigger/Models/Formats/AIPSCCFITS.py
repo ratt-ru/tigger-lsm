@@ -105,6 +105,9 @@ def load(filename, center=None, **kw):
     model.setFieldCenter(*center)
     # setup radial distances
     projection = Coordinates.Projection.SinWCS(*model.fieldCenter())
+    for src in model.sources:
+        l, m = projection.lm(src.pos.ra, src.pos.dec)
+        src.setAttribute('r', math.sqrt(l * l + m * m))
     return model
 
 
