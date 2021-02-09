@@ -30,6 +30,10 @@ import math
 import numpy
 import os.path
 
+# TODO - (raz) move PyQt5 import statements back to where they were
+from PyQt5.Qt import QObject
+from PyQt5.Qt import pyqtSignal
+
 from Tigger import startup_dprint
 
 startup_dprint(1, "starting ModelClasses")
@@ -38,6 +42,18 @@ DEG = 180 / math.pi
 
 AtomicTypes = dict(bool=bool, int=int, float=float, complex=complex, str=str, list=list, tuple=tuple, dict=dict,
                    NoneType=lambda x: None)
+
+
+class ModelItemSignals(QObject):
+    """ModelItemSignals is a connecting object for adding pyqtSignals to ModelItem"""
+    updated = pyqtSignal(int, object)
+    changeCurrentSource = pyqtSignal(object, object, object)
+    selected = pyqtSignal(object, object)
+    changeGroupingStyle = pyqtSignal(object, object)
+    changeGroupingVisibility = pyqtSignal(object, object)
+
+    def __init__(self):
+        QObject.__init__(self)
 
 
 class ModelItem(object):
@@ -80,14 +96,14 @@ class ModelItem(object):
         for attr, value in zip(self.mandatory_attrs, args):
             if not isinstance(value, AllowedTypesTuple):
                 raise TypeError("invalid type %s for attribute %s (class %s)" % (
-                type(value).__name__, attr, self.__class__.__name__))
+                    type(value).__name__, attr, self.__class__.__name__))
             setattr(self, attr, value)
         # set optional attributes from keywords
         for kw, default in list(self.optional_attrs.items()):
             value = kws.pop(kw, default)
             if not isinstance(value, AllowedTypesTuple):
                 raise TypeError("invalid type %s for attribute %s (class %s)" % (
-                type(value).__name__, kw, self.__class__.__name__))
+                    type(value).__name__, kw, self.__class__.__name__))
             setattr(self, kw, value)
         # set extra attributes, if any are left
         self._extra_attrs = set()
@@ -95,19 +111,19 @@ class ModelItem(object):
             for kw, value in list(kws.items()):
                 if not isinstance(value, AllowedTypesTuple):
                     raise TypeError("invalid type %s for attribute %s (class %s)" % (
-                    type(value).__name__, kw, self.__class__.__name__))
+                        type(value).__name__, kw, self.__class__.__name__))
+                signal_name = pyqtSignal()  # TODO - (raz) this may no longer be needed - check
                 self.setAttribute(kw, value)
         elif kws:
             raise TypeError("unknown parameters %s in constructor of %s" % (
-            ','.join(list(kws.keys())), self.__class__.__name__))
+                ','.join(list(kws.keys())), self.__class__.__name__))
         # other init
         self._signaller = None
         self._connections = set()
 
     def enableSignals(self):
         """Enables Qt signals for this object."""
-        import PyQt4.Qt
-        self._signaller = PyQt4.Qt.QObject()
+        self._signaller = ModelItemSignals()
 
     def signalsEnabled(self):
         return bool(self._signaller)
@@ -116,17 +132,37 @@ class ModelItem(object):
         """Connects SIGNAL from object to specified receiver slot. If reconnect is True, allows duplicate connections."""
         if not self._signaller:
             raise RuntimeError("ModelItem.connect() called before enableSignals()")
-        import PyQt4.Qt
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
-            PyQt4.Qt.QObject.connect(self._signaller, PyQt4.Qt.SIGNAL(signal_name), receiver)
+            # print(f"ModelClasses connect signal_name {signal_name} and receiver {receiver}")
+            # PyQt4.Qt.QObject.connect(self._signaller, PyQt4.Qt.SIGNAL(signal_name), receiver)  # old code for reference
+            if signal_name == 'updated':
+                self._signaller.updated.connect(receiver)
+            elif signal_name == 'changeCurrentSource':
+                self._signaller.changeCurrentSource.connect(receiver)
+            elif signal_name == 'selected':
+                self._signaller.selected.connect(receiver)
+            elif signal_name == 'changeGroupingStyle':
+                self._signaller.changeGroupingStyle.connect(receiver)
+            elif signal_name == 'changeGroupingVisibility':
+                self._signaller.changeGroupingVisibility.connect(receiver)
 
     def emit(self, signal_name, *args):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        import PyQt4.Qt
-        self._signaller.emit(PyQt4.Qt.SIGNAL(signal_name), *args)
+        # print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
+        if signal_name == 'updated':
+            self._signaller.updated.emit(*args)
+        elif signal_name == 'changeCurrentSource':
+            self._signaller.changeCurrentSource.emit(*args)
+        elif signal_name == 'selected':
+            self._signaller.selected.emit(*args)
+        elif signal_name == 'changeGroupingStyle':
+            self._signaller.changeGroupingStyle.emit(*args)
+        elif signal_name == 'changeGroupingVisibility':
+            self._signaller.changeGroupingVisibility.emit(*args)
+        # self._signaller.emit(PyQt4.Qt.SIGNAL(signal_name), *args)  # old code for reference
 
     def registerClass(classobj):
         if not isinstance(classobj, type):
@@ -171,7 +207,7 @@ class ModelItem(object):
         """Returns copy of object. Copies all attributes."""
         attrs = self.optional_attrs.copy()
         attrs.update(self.getExtraAttributes())
-        attrs = copy.deepcopy(attrs, memodict)
+        attrs = copy.deepcopy(attrs, memodict)  # TODO - (raz) This cannot be correct if using default copy (and below)
         return self.__class__(*[copy.deepcopy(getattr(self, attr), memodict) for attr in self.mandatory_attrs],
                               **attrs)
 
@@ -210,11 +246,11 @@ class ModelItem(object):
         and rem_tags is to be passed to child items' resolveMarkup() """
         # figure out enclosing tag
         if not tags:
-            tag, tags = None, None;  # use default
+            tag, tags = None, None  # use default
         elif isinstance(tags, str):
-            tag, tags = tags, None;  # one tag supplied, use that here and use defaults for sub-items
+            tag, tags = tags, None  # one tag supplied, use that here and use defaults for sub-items
         elif isinstance(tags, (list, tuple)):
-            tag, tags = tags[0], tags[1:];  # stack of tags supplied: use first here, pass rest to sub-items
+            tag, tags = tags[0], tags[1:]  # stack of tags supplied: use first here, pass rest to sub-items
         else:
             raise ValueError("invalid 'tags' parameter of type " + str(type(tags)))
         # if tag is None, use default
@@ -287,7 +323,7 @@ class ModelItem(object):
             markup += "mdlattr=\"%s\" " % attr
         # if rendering table row, use TD to render comments
         if verbose is None:
-            verbose = attr;  # and self.attr_verbose.get(attr)
+            verbose = attr  # and self.attr_verbose.get(attr)
         if tag == "TR":
             comment = "<TD bgcolor=yellow>%s</TD>"
         else:
@@ -433,14 +469,14 @@ class Gaussian(Shape):
 
     def strDesc(self, delimiters=('"', "x", "@", "deg"), **kw):
         return """%.2g%s%s%.2g%s%s%d%s""" % (
-        self.ex * DEG * 3600, delimiters[0], delimiters[1], self.ey * DEG * 3600, delimiters[0],
-        delimiters[2], round(self.pa * DEG), delimiters[3])
+            self.ex * DEG * 3600, delimiters[0], delimiters[1], self.ey * DEG * 3600, delimiters[0],
+            delimiters[2], round(self.pa * DEG), delimiters[3])
 
     def strDescErr(self, delimiters=('"', "x", "@", "deg"), **kw):
         err = self.getShapeErr()
         return err and """%.2g%s%s%.2g%s%s%d%s""" % (
-        err[0] * DEG * 3600, delimiters[0], delimiters[1], err[1] * DEG * 3600, delimiters[0],
-        delimiters[2], round(err[2] * DEG), delimiters[3])
+            err[0] * DEG * 3600, delimiters[0], delimiters[1], err[1] * DEG * 3600, delimiters[0],
+            delimiters[2], round(err[2] * DEG), delimiters[3])
 
 
 class FITSImage(Shape):
@@ -458,7 +494,7 @@ startup_dprint(1, "end of class defs")
 globs = list(globals().items())
 
 AllowedTypes = dict(iter(list(AtomicTypes.items())))
-AllowedTypes['NoneType'] = type(None);  # this must be a type, otherwise isinstance() doesn't work
+AllowedTypes['NoneType'] = type(None)  # this must be a type, otherwise isinstance() doesn't work
 for name, val in globs:
     if isinstance(val, type):
         AllowedTypes[name] = val
