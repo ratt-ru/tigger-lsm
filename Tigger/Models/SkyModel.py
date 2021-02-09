@@ -351,7 +351,6 @@ class SkyModel(ModelItem):
         elif show and min(show) == PlotStyles.ShowNot:
             show = False
         else:
-            # show = bool(style0.show_plot)  # TODO - (raz) Not clear what/where style0 is
             show = True  # upstream fix
         if not show:
             return None, None
