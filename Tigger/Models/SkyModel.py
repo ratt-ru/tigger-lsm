@@ -206,6 +206,7 @@ class SkyModel(ModelItem):
         origin: originator of changes.
         """
         if self.signalsEnabled():
+            print(f"emitUpdate signal what is {what} and origin is {origin}")
             self.emit("updated", what, origin)
 
     def emitSelection(self, origin=None):
