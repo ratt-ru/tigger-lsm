@@ -151,7 +151,7 @@ class ModelItem(object):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        # print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
+        print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
         if signal_name == 'updated':
             self._signaller.updated.emit(*args)
         elif signal_name == 'changeCurrentSource':
