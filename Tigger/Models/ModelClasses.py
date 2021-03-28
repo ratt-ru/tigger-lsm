@@ -31,8 +31,13 @@ import numpy
 import os.path
 
 # TODO - (raz) move PyQt5 import statements back to where they were
-from PyQt5.Qt import QObject
-from PyQt5.Qt import pyqtSignal
+try:
+    from PyQt5.Qt import QObject
+    from PyQt5.Qt import pyqtSignal
+except ImportError:
+    qt_available = False
+else:
+    qt_available = True
 
 from Tigger import startup_dprint
 
@@ -112,7 +117,6 @@ class ModelItem(object):
                 if not isinstance(value, AllowedTypesTuple):
                     raise TypeError("invalid type %s for attribute %s (class %s)" % (
                         type(value).__name__, kw, self.__class__.__name__))
-                signal_name = pyqtSignal()  # TODO - (raz) this may no longer be needed - check
                 self.setAttribute(kw, value)
         elif kws:
             raise TypeError("unknown parameters %s in constructor of %s" % (
@@ -123,7 +127,8 @@ class ModelItem(object):
 
     def enableSignals(self):
         """Enables Qt signals for this object."""
-        self._signaller = ModelItemSignals()
+        if qt_available:
+            self._signaller = ModelItemSignals()
 
     def signalsEnabled(self):
         return bool(self._signaller)
