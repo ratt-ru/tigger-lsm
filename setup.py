@@ -5,6 +5,7 @@ from setuptools import setup, find_packages
 
 __version__ = "1.7.0"
 
+# PyQt has not been added here are it needs to be installed via apt-get which is a Tigger requirement.
 requirements = ['astro_kittens==1.4.3',
                 'numpy>=1.17',
                 'scipy==1.5.2',
