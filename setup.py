@@ -5,7 +5,12 @@ from setuptools import setup, find_packages
 
 __version__ = "1.7.0"
 
-requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future']
+requirements = ['astro_kittens==1.4.3',
+                'numpy>=1.17',
+                'scipy==1.5.2',
+                'astlib==0.10.2',
+                'astropy==4.1',
+                'future']
 
 scripts = [
     'Tigger/bin/tigger-convert',
