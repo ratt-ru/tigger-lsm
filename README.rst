@@ -16,8 +16,8 @@ from pypi or from source
 
 from source::
 
-    $ git clone https://github.com/ska-sa/tigger_lsm_pyqt5
-    $ cd tigger-lsm
+    $ git clone https://github.com/razman786/tigger_lsm_pyqt5
+    $ cd tigger_lsm_pyqt5
     $ git checkout develop
     $ python setup.py install --user
 
