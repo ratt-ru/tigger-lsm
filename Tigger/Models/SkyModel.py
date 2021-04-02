@@ -55,11 +55,11 @@ class ModelTagSet(ModelItem):
         return self.tags.setdefault(tagname, ModelTag(tagname))
 
     def getAll(self):
-        _all = list(self.tags.values())
+        all = list(self.tags.values())
         from past.builtins import cmp
         from functools import cmp_to_key
-        _all.sort(key=cmp_to_key(lambda a, b: cmp(a.name(), b.name())))
-        return _all
+        all.sort(key=cmp_to_key(lambda a, b: cmp(a.name(), b.name())))
+        return all
 
     def addNames(self, names):
         """Ensures that ModelTag objects are initialized for all tagnames in names"""
