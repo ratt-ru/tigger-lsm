@@ -2,45 +2,52 @@
 Tigger-LSM: LSM Libs/utils
 ==========================
 
+N.B. THIS README IS THE BETA TESTER VERSION
+===========================================
+
 Installing Tigger-LSM
 =====================
 
-Ubuntu package
---------------
+Python dependencies
+-------------------
 
-Enable the KERN suite and install the tigger-lsm package.
+Automatically installed dependencies:
 
+* astro_kittens == v1.4.3
+* numpy >= v1.17
+* scipy == v1.5.2
+* astlib == v0.10.2
+* astropy == v4.1
+* future
 
-from pypi or from source
-------------------------
+from source with Ubuntu 20.04
+-----------------------------
 
-from source::
+Build the source with the following::
 
-    $ git clone https://github.com/razman786/tigger_lsm_pyqt5
-    $ cd tigger_lsm_pyqt5
-    $ git checkout develop
-    $ python setup.py install --user
-
+    git clone https://github.com/razman786/tigger_lsm_pyqt5
+    cd tigger_lsm_pyqt5
+    python setup.py install --user
 
 Using Tigger-LSM
 ================
 
 In python:
 
-    $ import Tigger
-    $ model = Tigger.load("foo.lsm.html")
+    import Tigger
+    model = Tigger.load("foo.lsm.html")
 
 In the shell
 
-    $ tigger-convert foo.txt foo.lsm.html
+    tigger-convert foo.txt foo.lsm.html
 
 
-Questions or problems
-=====================
+Beta Tester Questions or problems
+=================================
 
 Open an issue on github
 
-https://github.com/ska-sa/tigger-lsm
+https://github.com/razman786/tigger_lsm_pyqt5/issues
 
 
 Travis

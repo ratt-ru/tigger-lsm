@@ -5,7 +5,8 @@ Tigger Changelog
 1.7.0
 =====
 
-* Move from PyQt4 to PyQt5
+* Ported from PyQt 4 to PyQt 5
+* Works with Tigger 1.5.0
 
 1.3.9
 =====
