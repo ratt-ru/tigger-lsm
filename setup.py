@@ -6,11 +6,12 @@ from setuptools import setup, find_packages
 __version__ = "1.7.0"
 
 # PyQt has not been added here are it needs to be installed via apt-get which is a Tigger requirement.
+# Versions below are set to astLib 0.11.6 tested and compatible versions found
 requirements = ['astro_kittens==1.4.3',
-                'numpy>=1.17',
-                'scipy==1.5.2',
-                'astlib==0.10.2',
-                'astropy==4.1',
+                'numpy==1.18.1',  # set to astLib recommended
+                'scipy==1.5.2',  # recommends 1.3.1, this fails, next available version
+                'astlib==0.11.6',  # latest version that uses astropy WCS at the backend
+                'astropy==3.2.3',  # recommends 3.2.1, this fails, next available version (last of 3.x)
                 'future']
 
 scripts = [
