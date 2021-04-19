@@ -30,12 +30,12 @@ import math
 import numpy
 import os.path
 
-# TODO - (raz) move PyQt5 import statements back to where they were
 try:
     from PyQt5.Qt import QObject
     from PyQt5.Qt import pyqtSignal
-except ImportError:
+except:
     qt_available = False
+    pass
 else:
     qt_available = True
 
@@ -50,7 +50,10 @@ AtomicTypes = dict(bool=bool, int=int, float=float, complex=complex, str=str, li
 
 
 class ModelItemSignals(QObject):
-    """ModelItemSignals is a connecting object for adding pyqtSignals to ModelItem"""
+    """ModelItemSignals is a connecting object for adding pyqtSignals to ModelItem.
+    The signals are compatible with PyQt 5 and Tigger v1.6.0
+    """
+
     updated = pyqtSignal(int, object)
     changeCurrentSource = pyqtSignal(object, object, object)
     selected = pyqtSignal(object, object)
@@ -139,8 +142,6 @@ class ModelItem(object):
             raise RuntimeError("ModelItem.connect() called before enableSignals()")
         if reconnect or (signal_name, receiver) not in self._connections:
             self._connections.add((signal_name, receiver))
-            # print(f"ModelClasses connect signal_name {signal_name} and receiver {receiver}")
-            # PyQt4.Qt.QObject.connect(self._signaller, PyQt4.Qt.SIGNAL(signal_name), receiver)  # old code for reference
             if signal_name == 'updated':
                 self._signaller.updated.connect(receiver)
             elif signal_name == 'changeCurrentSource':
@@ -156,8 +157,6 @@ class ModelItem(object):
         """Emits named SIGNAL from this object ."""
         if not self._signaller:
             raise RuntimeError("ModelItem.emit() called before enableSignals()")
-        # signal debug line
-        # print(f"ModelClasses emit signal_name {signal_name} and *args {args}")
         if signal_name == 'updated':
             self._signaller.updated.emit(*args)
         elif signal_name == 'changeCurrentSource':
@@ -168,7 +167,6 @@ class ModelItem(object):
             self._signaller.changeGroupingStyle.emit(*args)
         elif signal_name == 'changeGroupingVisibility':
             self._signaller.changeGroupingVisibility.emit(*args)
-        # self._signaller.emit(PyQt4.Qt.SIGNAL(signal_name), *args)  # old code for reference
 
     def registerClass(classobj):
         if not isinstance(classobj, type):

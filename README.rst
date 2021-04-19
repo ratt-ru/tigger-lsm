@@ -2,52 +2,70 @@
 Tigger-LSM: LSM Libs/utils
 ==========================
 
-N.B. THIS README IS THE BETA TESTER VERSION
-===========================================
-
 Installing Tigger-LSM
 =====================
 
-Python dependencies
--------------------
+Ubuntu package
+--------------
 
-Automatically installed dependencies:
+Enable the KERN suite and install the tigger-lsm package.
 
-* astro_kittens == v1.4.3
-* numpy >= v1.17
-* scipy == v1.5.2
-* astlib == v0.10.2
-* astropy == v4.1
-* future
 
-from source with Ubuntu 20.04
------------------------------
+from pypi or from source
+------------------------
 
-Build the source with the following::
+requirements:
 
-    git clone https://github.com/razman786/tigger_lsm_pyqt5
-    cd tigger_lsm_pyqt5
-    python setup.py install --user
+ * Assorted python packages:
+    + astro-kittens==v1.4.3,
+    + astropy==v4.1,
+    + numpy==v1.18.1,
+    + scipy==v1.5.2,
+    + astLib==v0.11.6,
+    + python-casacore==v3.4.0,
+    + future==v0.18.2.
+
+ With the exception of astLib, these are already present in most Linux
+ distros.  astLib may be downloaded here: http://astlib.sourceforge.net/
+
+ * Purr/Kittens. Available from pip as astro-kittens. Else, install the purr package from a MeqTrees binary
+ distribution (see http://www.astron.nl/meqwiki/Downloading). Alternatively, check it out from svn (see below),
+ and make sure the parent of the Kittens directory is in your PYTHONPATH.
+
+To obtain on ubuntu you can run::
+
+  $ sudo apt-get install python-kittens python-pyfits python-astlib python-scipy python-numpy
+
+now from pip::
+
+    $ pip install astro-tigger-lsm
+
+or from source::
+
+    $ git clone https://github.com/ska-sa/tigger-lsm
+    $ cd tigger-lsm
+    $ python setup.py install
+
 
 Using Tigger-LSM
 ================
 
 In python:
 
-    import Tigger
-    model = Tigger.load("foo.lsm.html")
+    $ import Tigger
+    $ model = Tigger.load("foo.lsm.html")
 
 In the shell
 
-    tigger-convert foo.txt foo.lsm.html
+    $ tigger-convert foo.txt foo.lsm.html
 
 
-Beta Tester Questions or problems
-=================================
+Questions or problems
+=====================
 
 Open an issue on github
 
-https://github.com/razman786/tigger_lsm_pyqt5/issues
+https://github.com/ska-sa/tigger-lsm
 
 
 Travis

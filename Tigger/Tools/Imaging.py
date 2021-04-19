@@ -99,8 +99,7 @@ def fitPsf(filename, cropsize=None):
     ampl, y0, x0, sy, sx, rot = parms
 
     # get pixel sizes in radians (by constructing a projection object)
-    proj = Projection.FITSWCS(hdr)
-    xscale, yscale = proj.xscale, proj.yscale
+    proj = Projection.FITSWCSpix(hdr)
 
     sx_rad = abs(sx * proj.xscale)
     sy_rad = abs(sy * proj.yscale)

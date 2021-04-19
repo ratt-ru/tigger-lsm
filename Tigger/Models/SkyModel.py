@@ -162,7 +162,7 @@ class SkyModel(ModelItem):
         # setup source list
         self.setSources(sources)
 
-    def copy(self):  # Overrides ModelItem copy(self, deep=True)
+    def copy(self):
         return SkyModel(*self.sources, **dict(self.getAttributes()))
 
     def images(self):
@@ -206,7 +206,6 @@ class SkyModel(ModelItem):
         origin: originator of changes.
         """
         if self.signalsEnabled():
-            print(f"emitUpdate signal what is {what} and origin is {origin}")
             self.emit("updated", what, origin)
 
     def emitSelection(self, origin=None):
@@ -353,7 +352,7 @@ class SkyModel(ModelItem):
         elif show and min(show) == PlotStyles.ShowNot:
             show = False
         else:
-            show = True  # upstream fix
+            show = True
         if not show:
             return None, None
         # sort styles

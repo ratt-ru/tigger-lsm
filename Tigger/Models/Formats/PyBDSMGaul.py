@@ -66,7 +66,7 @@ def load(filename, freq0=None, **kw):
         format_mapping['Source_id'] = format_mapping.pop('Gaus_id')
         id = "Source_id"
     # look for format string and reference freq, and build up format dict
-    for line in file(filename):
+    for line in open(filename):
         m = re.match("# Reference frequency .*?([0-9.eE+-]+)\s*Hz", line)
         if m:
             freq0 = kw['freq0'] = freq0 or float(m.group(1))

@@ -1,0 +1,69 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel
+        pip install flake8 pytest
+        pip install .
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test conversion to .txt models
+      run: |
+        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt -f \
+          --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
+        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.recentred.txt -f --center 85.5deg,49.9deg --rename \
+          --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
+        echo "Checking reference LSM"
+        diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.reference.txt /tmp/output.txt
+        echo "Checking recentred reference LSM"
+        diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.recentred.reference.txt /tmp/output.recentred.txt
+    - name: Test reverse conversion to .lsm.html models
+      run: |
+        tigger-convert /tmp/output.txt /tmp/output.lsm.html -f
+    - name: Test .gaul conversions
+      run: |
+        tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.lsm.html -f 
+        tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.txt -f --output-format "name ra_d dec_d i q u v spi rm emaj_s emin_s pa_d freq0"
+        diff $GITHUB_WORKSPACE/test/deep4.reference.txt /tmp/deep4.txt
+    - name: Test .AIPSCC conversions
+      run: |
+        gunzip <$GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.fits.gz >/tmp/3C147-L-A-CLEAN.fits
+        tigger-convert /tmp/3C147-L-A-CLEAN.fits /tmp/3C147-L-A-CLEAN.fits.lsm.html -f
+        tigger-convert /tmp/3C147-L-A-CLEAN.fits.lsm.html /tmp/3C147-L-A-CLEAN.txt -f --output-format "name ra_d dec_d i q u v"
+        zdiff $GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.txt.gz /tmp/3C147-L-A-CLEAN.txt
+    - name: Testing tigger-restore and tigger-make-brick
+      run: |
+        cp $GITHUB_WORKSPACE/test/3C147tmp.fits /tmp
+        tigger-make-brick $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/3C147tmp.fits 
+        tigger-restore -f $GITHUB_WORKSPACE/test/3C147tmp.fits $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/restored.fits
+    - name: Test tigger-tag
+      run: |
+        tigger-tag $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html 'r<0.5d' inner=1 -o /tmp/tmp.lsm.html -f
