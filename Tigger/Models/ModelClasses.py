@@ -33,7 +33,7 @@ import os.path
 try:
     from PyQt5.Qt import QObject
     from PyQt5.Qt import pyqtSignal
-except:
+except ImportError:
     qt_available = False
     pass
 else:
@@ -49,19 +49,20 @@ AtomicTypes = dict(bool=bool, int=int, float=float, complex=complex, str=str, li
                    NoneType=lambda x: None)
 
 
-class ModelItemSignals(QObject):
-    """ModelItemSignals is a connecting object for adding pyqtSignals to ModelItem.
-    The signals are compatible with PyQt 5 and Tigger v1.6.0
-    """
+if qt_available:
+    class ModelItemSignals(QObject):
+        """ModelItemSignals is a connecting object for adding pyqtSignals to ModelItem.
+        The signals are compatible with PyQt 5 and Tigger v1.6.0
+        """
 
-    updated = pyqtSignal(int, object)
-    changeCurrentSource = pyqtSignal(object, object, object)
-    selected = pyqtSignal(object, object)
-    changeGroupingStyle = pyqtSignal(object, object)
-    changeGroupingVisibility = pyqtSignal(object, object)
+        updated = pyqtSignal(int, object)
+        changeCurrentSource = pyqtSignal(object, object, object)
+        selected = pyqtSignal(object, object)
+        changeGroupingStyle = pyqtSignal(object, object)
+        changeGroupingVisibility = pyqtSignal(object, object)
 
-    def __init__(self):
-        QObject.__init__(self)
+        def __init__(self):
+            QObject.__init__(self)
 
 
 class ModelItem(object):
