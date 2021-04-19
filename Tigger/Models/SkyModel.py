@@ -32,6 +32,7 @@ from Tigger.Coordinates import angular_dist_pos_angle, DEG
 from functools import reduce
 import functools
 
+
 class ModelTag(ModelItem):
     mandatory_attrs = ["name"]
     optional_attrs = dict([(attr, None) for attr in PlotStyles.StyleAttributes])
@@ -76,7 +77,7 @@ class ModelTagSet(ModelItem):
         markup += ">"
         # write mandatory attributes
         for name, tt in list(self.tags.items()):
-            markup += self.renderAttrMarkup(name, tt, tag="TR", mandatory=True)
+            markup += self.renderAttrMarkup(name, tt, tags="TR", mandatory=True)
         # closing tag
         markup += "</%s>" % tag
         return markup
@@ -191,12 +192,12 @@ class SkyModel(ModelItem):
 
     # Bitflags for the 'what' argument of the updated() signal below.
     # These indicate what exactly has been updated:
-    UpdateSourceList = 1;  # source list changed
-    UpdateSourceContent = 2;  # source attributes have changed
-    UpdateTags = 4;  # tags have been changed
-    UpdateGroupVis = 8;  # visibility of a grouping (group.style.show_list attribute) has changed
-    UpdateGroupStyle = 16;  # plot style of a grouping has changed
-    UpdateSelectionOnly = 32;  # (in combination with UpdateSourceContent): update only affects currently selected sources
+    UpdateSourceList = 1  # source list changed
+    UpdateSourceContent = 2  # source attributes have changed
+    UpdateTags = 4  # tags have been changed
+    UpdateGroupVis = 8  # visibility of a grouping (group.style.show_list attribute) has changed
+    UpdateGroupStyle = 16  # plot style of a grouping has changed
+    UpdateSelectionOnly = 32  # (in combination with UpdateSourceContent): update only affects currently selected sources
     UpdateAll = UpdateSourceList + UpdateSourceContent + UpdateTags + UpdateGroupVis + UpdateGroupStyle
 
     def emitUpdate(self, what=UpdateSourceContent, origin=None):
@@ -284,7 +285,7 @@ class SkyModel(ModelItem):
         if 'default' in self.plotstyles:
             defstyle = PlotStyles.BaselinePlotStyle.copy()
             defstyle.update(self.plotstyles['default'])
-            defstyle.apply = 1000;  # apply at lowest priority
+            defstyle.apply = 1000  # apply at lowest priority
         else:
             defstyle = self.plotstyles['default'] = PlotStyles.BaselinePlotStyle
         self.defgroup = Source.Grouping("all sources", func=lambda src: True, sources=self.sources, style=defstyle)
@@ -340,7 +341,7 @@ class SkyModel(ModelItem):
         styles = [group.style for group in self.groupings if group.func(src)]
         # sort in order of priority (high apply to low apply)
         from past.builtins import cmp
-        from functools import cmp_to_key   
+        from functools import cmp_to_key
         styles.sort(key=cmp_to_key(lambda a, b: cmp(b.apply, a.apply)))
         # "show_plot" attribute: if at least one group is showing explicitly, show
         # else if at least one group is hiding explicitly, hide
