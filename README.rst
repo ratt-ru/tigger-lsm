@@ -16,15 +16,7 @@ from pypi or from source
 
 requirements:
 
- * Assorted python packages:
-    + astro-kittens==v1.4.3,
-    + astropy==v4.1,
-    + numpy==v1.18.1,
-    + scipy==v1.5.2,
-    + astLib==v0.11.6,
-    + python-casacore==v3.4.0,
-    + future==v0.18.2.
-
+ * Assorted python packages: astropy, numpy, scipy, astLib, python-casacore, future.
  With the exception of astLib, these are already present in most Linux
  distros.  astLib may be downloaded here: http://astlib.sourceforge.net/
 
