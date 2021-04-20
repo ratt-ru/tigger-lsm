@@ -245,12 +245,14 @@ class Projection(object):
                     raise RuntimeError("Missing RA or DEC axis")
                 ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
                 self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
-                refpix1 = self.refpix.copy()
-                refpix1[self.ra_axis] += 1
-                refpix1[self.dec_axis] += 1
-                delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
-                self.xscale = delta[self.ra_axis] * DEG
-                self.yscale = delta[self.dec_axis] * DEG
+                self.xscale = self.wcs.to_header()["CDELT{}".format(self.ra_axis + 1)] * DEG
+                self.yscale = self.wcs.to_header()["CDELT{}".format(self.dec_axis + 1)] * DEG
+                # refpix1 = np.array(self.refpix).copy()
+                # refpix1[self.ra_axis] += 1
+                # refpix1[self.dec_axis] += 1
+                # delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
+                # self.xscale = delta[self.ra_axis] * DEG
+                # self.yscale = delta[self.dec_axis] * DEG
                 has_projection = True
             except Exception as exc:
                 traceback.print_exc()
@@ -294,7 +296,7 @@ class Projection(object):
             if not self.has_projection():
                 return numpy.arcsin(l * self.xscale), numpy.arcsin(m * self.yscale)
             if numpy.isscalar(l) and numpy.isscalar(m):
-                pixvec = self.refpix.copy()
+                pixvec = np.array(self.refpix).copy()
                 pixvec[self.ra_axis] = l
                 pixvec[self.dec_axis] = m
                 skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
@@ -316,6 +318,7 @@ class Projection(object):
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
+            """ dra and ddec must be in radians """
             return self.xpix0 + dra / self.xscale, self.ypix0 + ddec / self.xscale
 
         def __eq__(self, other):
