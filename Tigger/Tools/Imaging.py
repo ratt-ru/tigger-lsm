@@ -48,7 +48,7 @@ dprintf = _verbosity.dprintf
 DEG = 180 / math.pi
 ARCMIN = DEG * 60
 ARCSEC = ARCMIN * 60
-FWHM = math.sqrt(math.log(256));  # which is 2.3548
+FWHM = math.sqrt(math.log(256))  # which is 2.3548
 
 
 def fitPsf(filename, cropsize=None):
@@ -103,7 +103,7 @@ def fitPsf(filename, cropsize=None):
 
     sx_rad = abs(sx * proj.xscale)
     sy_rad = abs(sy * proj.yscale)
-    rot -= 90;  # convert West through North PA into the conventional North through East
+    rot -= 90  # convert West through North PA into the conventional North through East
     if sx_rad < sy_rad:
         sx_rad, sy_rad = sy_rad, sx_rad
         rot -= 90
@@ -192,7 +192,7 @@ def getImageCube(fitshdu, filename="", extra_axes=None):
         axs = str(n + 1)
         ctype = hdr.get('CTYPE' + axs).strip().upper()
         if ix is None and FITSHeaders.isAxisTypeX(ctype):
-            ix = iax;  # in numpy order, axes are reversed
+            ix = iax  # in numpy order, axes are reversed
         elif iy is None and FITSHeaders.isAxisTypeY(ctype):
             iy = iax
         elif ctype == 'STOKES':
@@ -394,7 +394,7 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
         if gmin == 0:
             gmin = gmaj
         cos_rot = math.cos(grot)
-        sin_rot = math.sin(-grot);  # rotation is N->E, so swap the sign
+        sin_rot = math.sin(-grot)  # rotation is N->E, so swap the sign
     else:
         gmaj = gmin = grot = 0
     conv_kernels = {}
@@ -426,8 +426,8 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
             dprintf(3, "Source %s, %s Jy, at pixel %f,%f\n", src.name, stokes_vec, xsrc, ysrc)
             # for gaussian sources, convolve with beam
             if src.typecode == 'Gau':
-                pa0 = src.shape.pa + math.pi / 2;  # convert PA from N->E to conventional W->N
-                ex0, ey0 = src.shape.ex / FWHM, src.shape.ey / FWHM;  # convert extents from FWHM to sigmas, since gmaj/gmin is in same scale
+                pa0 = src.shape.pa + math.pi / 2  # convert PA from N->E to conventional W->N
+                ex0, ey0 = src.shape.ex / FWHM, src.shape.ey / FWHM  # convert extents from FWHM to sigmas, since gmaj/gmin is in same scale
                 if gmaj > 0:
                     ex, ey, pa = convolveGaussian(ex0, ey0, pa0, gmaj, gmin, grot)
                     # normalize flux by beam/extent ratio
@@ -448,7 +448,7 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
                 box_radius = 5 * (max(ex, ey)) / min(abs(proj.xscale), abs(proj.yscale))
                 dprintf(2, "Will use a box of radius %f pixels for restoration\n", box_radius)
                 cos_pa = math.cos(pa)
-                sin_pa = math.sin(-pa);  # rotation is N->E, so swap the sign
+                sin_pa = math.sin(-pa)  # rotation is N->E, so swap the sign
                 # pixel coordinates of box around source in which we evaluate the gaussian
                 i1 = max(0, int(math.floor(xsrc - box_radius)))
                 i2 = min(nx, int(math.ceil(xsrc + box_radius)))

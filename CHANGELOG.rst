@@ -2,6 +2,13 @@
 Tigger Changelog
 ================
 
+1.7.0
+=====
+
+* Ported from PyQt 4 to PyQt 5
+* Works with Tigger 1.6.0 and Python 3
+* Various bug fixes
+
 1.3.9
 =====
 

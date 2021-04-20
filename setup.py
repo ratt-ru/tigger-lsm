@@ -3,8 +3,9 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "1.6.1"
+__version__ = "1.7.0"
 
+# PyQt 5 has not been added here are. It needs to be installed via apt-get which is a Tigger v1.6.0 requirement.
 requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future', 'python-casacore']
 
 scripts = [
@@ -28,7 +29,7 @@ setup(
     extras_require=extras_require,
     scripts=scripts,
     package_data=package_data,
-    python_requires='>=3.0.0',
+    python_requires='>=2.7.0',
     description="Python libraries and command-line tools for manipulating Tigger-format LSMs",
     author="Oleg Smirnov",
     author_email="osmirnov@gmail.com",
