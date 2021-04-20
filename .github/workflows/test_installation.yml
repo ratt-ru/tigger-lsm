@@ -28,46 +28,41 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade setuptools wheel
         
-        version=$(python -V 2>&1 | grep -Po '(?<=Python )(.+)')
-        echo $version
-        if [[ "$version" =~ "^2.7(.[0-9]*)?$" ]];
-        then
-                olddir=$(pwd)
-                apt install libboost-all-dev \
-                    libblas-dev \
-                    liblapack-dev \
-                    libqdbm-dev \
-                    wcslib-dev \
-                    libfftw3-dev \
-                    python3-numpy \
-                    libcfitsio-dev \
-                    libboost-system-dev \
-                    libncurses5-dev \
-                    libsofa1-dev \
-                    bison \
-                    libbison-dev \
-                    flex \
-                    libreadline6-dev \
-                    cmake \
-                    wget
+        olddir=$(pwd)
+        apt install libboost-all-dev \
+            libblas-dev \
+            liblapack-dev \
+            libqdbm-dev \
+            wcslib-dev \
+            libfftw3-dev \
+            python3-numpy \
+            libcfitsio-dev \
+            libboost-system-dev \
+            libncurses5-dev \
+            libsofa1-dev \
+            bison \
+            libbison-dev \
+            flex \
+            libreadline6-dev \
+            cmake \
+            wget
 
-                mkdir /src
-                cd /src
-                wget https://github.com/casacore/casacore/archive/v3.3.0.tar.gz
-                tar xvf v3.3.0.tar.gz
-                mkdir casacore-3.3.0/build
-                cd /src/casacore-3.3.0/build
-                cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPRECATED=ON -DBUILD_PYTHON3=OFF -DBUILD_PYTHON=ON ../
-                make -j 4
-                make install
-                ldconfig
-                wget https://github.com/casacore/python-casacore/archive/v3.3.0.tar.gz
-                tar xvf v3.3.0.tar.gz.1
-                cd /src/python-casacore-3.3.0
-                pip3 install .
-                python -c "from pyrap.tables import table as tbl"
-                cd $olddir
-        fi
+        mkdir /src
+        cd /src
+        wget https://github.com/casacore/casacore/archive/v3.3.0.tar.gz
+        tar xvf v3.3.0.tar.gz
+        mkdir casacore-3.3.0/build
+        cd /src/casacore-3.3.0/build
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_DEPRECATED=ON -DBUILD_PYTHON3=OFF -DBUILD_PYTHON=ON ../
+        make -j 4
+        make install
+        ldconfig
+        wget https://github.com/casacore/python-casacore/archive/v3.3.0.tar.gz
+        tar xvf v3.3.0.tar.gz.1
+        cd /src/python-casacore-3.3.0
+        pip3 install .
+        python -c "from pyrap.tables import table as tbl"
+        cd $olddir
        
         pip install flake8 pytest
         pip install .
