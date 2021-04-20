@@ -66,10 +66,7 @@ jobs:
                 pip3 install .
                 python -c "from pyrap.tables import table as tbl"
                 cd $olddir
-        else
-               #pass python 3
         fi
-
        
         pip install flake8 pytest
         pip install .
