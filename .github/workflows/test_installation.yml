@@ -29,7 +29,7 @@ jobs:
         pip install --upgrade setuptools wheel
         
         version=$(python -V 2>&1 | grep -Po '(?<=Python )(.+)')
-        echo $(version)
+        echo $version
         if [[ "$version" =~ "^2.7(.[0-9]*)?$" ]];
         then
                 olddir=$(pwd)
