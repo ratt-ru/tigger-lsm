@@ -246,7 +246,6 @@ class Projection(object):
                 ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
                 self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
                 refpix1 = np.array(self.refpix).copy()
-                refpix1 = self.refpix.copy()
                 refpix1[self.ra_axis] += 1
                 refpix1[self.dec_axis] += 1
                 delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
