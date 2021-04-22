@@ -77,7 +77,7 @@ class ModelTagSet(ModelItem):
         markup += ">"
         # write mandatory attributes
         for name, tt in list(self.tags.items()):
-            markup += self.renderAttrMarkup(name, tt, tag="TR", mandatory=True)
+            markup += self.renderAttrMarkup(name, tt, tags="TR", mandatory=True)
         # closing tag
         markup += "</%s>" % tag
         return markup
