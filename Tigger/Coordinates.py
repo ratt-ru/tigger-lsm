@@ -343,15 +343,17 @@ class Projection(object):
             Projection.FITSWCSpix.__init__(self, header)
             self._l0 = self.refpix[self.ra_axis]
             self._m0 = self.refpix[self.dec_axis]
+            self.xscale = self.wcs.to_header()["CDELT{}".format(self.ra_axis + 1)] * DEG
+            self.yscale = self.wcs.to_header()["CDELT{}".format(self.dec_axis + 1)] * DEG
 
         def lm(self, ra, dec):
             l, m = super().lm(ra, dec)
-            return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
+            return sin((l - self._l0) * self.xscale), sin((m - self._m0) * self.yscale)
 
         def radec(self, l, m):
             pixvec = np.array(self.refpix).copy()
-            pixvec[self.ra_axis] = (self.xpix0 - l / self.xscale) + self._l0
-            pixvec[self.dec_axis] = (self.ypix0 + m / self.yscale) + self._m0
+            pixvec[self.ra_axis] = self.xpix0 - l / self.xscale
+            pixvec[self.dec_axis] = self.ypix0 + m / self.yscale
             skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
             ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
             return ra * DEG, dec * DEG
