@@ -262,13 +262,14 @@ class Projection(object):
 
         def lm(self, ra, dec):
             if not self.has_projection():
+                print(f"Coordinates def lm() does not have projection")
                 return numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
             if numpy.isscalar(ra) and numpy.isscalar(dec):
                 if ra - self.ra0 > math.pi:
                     ra -= 2 * math.pi
                 if ra - self.ra0 < -math.pi:
                     ra += 2 * math.pi
-                skyvec = self.refsky.copy()
+                skyvec = np.array(self.refsky).copy()
                 skyvec[self.ra_axis] = ra / DEG
                 skyvec[self.dec_axis] = dec / DEG
                 pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
@@ -287,7 +288,7 @@ class Projection(object):
                 ra[ra - self.ra0 < -180] += 360
                 ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
                 ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
-                lm = self.wcs.wcs_world2pix(skymat, 0)
+                lm = self.wcs.wcs_world2pix([skymat], 0)
                 return lm[:, self.ra_axis], lm[:, self.dec_axis]
 
         def radec(self, l, m):
@@ -346,16 +347,71 @@ class Projection(object):
             self.xscale = self.wcs.to_header()["CDELT{}".format(self.ra_axis + 1)] * DEG
             self.yscale = self.wcs.to_header()["CDELT{}".format(self.dec_axis + 1)] * DEG
 
-        def lm(self, ra, dec):
+
+        def old_lm(self, ra, dec):
             l, m = super().lm(ra, dec)
             return sin((l - self._l0) * self.xscale), sin((m - self._m0) * self.yscale)
 
+        def lm(self, ra, dec):
+            if not self.has_projection():
+                print(f"Coordinates def lm() does not have projection")
+                return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
+            if numpy.isscalar(ra) and numpy.isscalar(dec):
+                print(f"Coordinates def lm() is scalar")
+                if ra - self.ra0 > math.pi:
+                    ra -= 2 * math.pi
+                    print(f"ra > math.pi {ra}")
+                if ra - self.ra0 < -math.pi:
+                    ra += 2 * math.pi
+                    print(f"ra < math.pi {ra}")
+                skyvec = np.array(self.refsky).copy()
+                print(f"skyvec {skyvec} type {type(skyvec)}")
+                skyvec[self.ra_axis] = ra / DEG
+                print(f"skyvec ra / DEG {ra/DEG} skyvec {skyvec}")
+                skyvec[self.dec_axis] = dec / DEG
+                print(f"skyvec dec / DEG {ra/DEG} skyvec {skyvec}")
+                pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
+                print(f"pixvec {pixvec}")
+                if np.isnan(np.sum(pixvec)):
+                    l, m = self._l0, self._m0
+                else:
+                    l, m = pixvec[self.ra_axis], pixvec[self.dec_axis]
+                    print(f"scalar l {l}, m {m}")
+            else:
+                print(f"Coordinates def lm() is NOT scalar")
+                if numpy.isscalar(ra):
+                    ra = numpy.array(ra)
+                if numpy.isscalar(dec):
+                    dec = numpy.array(dec)
+                n = max(len(ra), len(dec))
+                skymat = numpy.array([self.refsky for _ in range(n)])
+                skymat[:, self.ra_axis] = ra / DEG
+                skymat[:, self.dec_axis] = dec / DEG
+                ra = skymat[:, self.ra_axis]
+                ra[ra - self.ra0 > 180] -= 360
+                ra[ra - self.ra0 < -180] += 360
+                ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
+                ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
+                lm = self.wcs.wcs_world2pix([skymat], 0)
+                l, m = lm[:, self.ra_axis], lm[:, self.dec_axis]
+            #l = (self.xpix0 - l) * self.xscale
+            #m = (m - self.ypix0) * self.yscale
+            l = (l - self._l0) * self.xscale
+            m = (m - self._m0) * self.yscale
+            return l, m
+
         def radec(self, l, m):
-            pixvec = np.array(self.refpix).copy()
-            pixvec[self.ra_axis] = self.xpix0 - l / self.xscale
-            pixvec[self.dec_axis] = self.ypix0 + m / self.yscale
-            skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
-            ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
+            if not self.has_projection():
+                print(f"radec has no projection")
+                return numpy.arcsin(-l), numpy.arcsin(m)
+            if numpy.isscalar(l) and numpy.isscalar(m):
+                pixvec = np.array(self.refpix).copy()
+                pixvec[self.ra_axis] = self.xpix0 - l / self.xscale
+                pixvec[self.dec_axis] = self.ypix0 + m / self.yscale
+                skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
+                ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
+            else:
+                print("ERROR: tigger-lsm: Coordinates.py: projection, l m nonscalar")
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
