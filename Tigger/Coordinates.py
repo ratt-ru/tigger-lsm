@@ -371,7 +371,7 @@ class Projection(object):
                 skyvec[self.dec_axis] = dec / DEG
                 pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
                 if np.isnan(np.sum(pixvec)):
-                    l, m = self._l0, self._m0
+                    l, m = -0.0, 0.0
                     # print(f"Coordinates def lm() is NaN l set to {l}, m set to {m}")
                 else:
                     l, m = pixvec[self.ra_axis], pixvec[self.dec_axis]
