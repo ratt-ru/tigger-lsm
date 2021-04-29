@@ -409,7 +409,7 @@ class Projection(object):
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
-            return sin(dra), sin(ddec)
+            return dra, ddec  # removed sin()'s from this method to match the old tigger-lsm
 
     @staticmethod
     def FITSWCS_static(ra0, dec0):
