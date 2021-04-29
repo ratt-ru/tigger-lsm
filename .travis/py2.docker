@@ -1,54 +1,27 @@
 FROM kernsuite/base:6
 
-RUN docker-apt-install python3-casacore casacore-dev casacore-data makems casarest \
-                       python3-pip git wget cmake libblitz0-dev libqdbm-dev \
-                       libfftw3-dev wcslib-dev libcfitsio-dev \
-                       'libcasa-*' liblapack-dev libatlas-base-dev
-#######################################
-# Install python 3 meqtrees
-#######################################
-# add additional Timba dependencies
-RUN docker-apt-install python3-pyqt4 python3-pyqt5
+RUN docker-apt-install python-casacore casacore-data makems casarest \
+                       python-pip git wget meqtrees meqtrees-timba owlcat
+
 WORKDIR /src
-RUN wget https://codeload.github.com/ska-sa/meqtrees-cattery/tar.gz/refs/tags/v1.7.1 && \
-    tar zxvf v1.7.1 && \
-    rm v1.7.1 
-RUN wget https://codeload.github.com/ska-sa/purr/tar.gz/refs/tags/v1.5.0 && \
-    tar zxvf v1.5.0 && \
-    rm v1.5.0
-RUN wget https://codeload.github.com/ska-sa/owlcat/tar.gz/refs/tags/v1.6.0 && \
-    tar zxvf v1.6.0 && \
-    rm v1.6.0
-RUN wget https://codeload.github.com/ska-sa/kittens/tar.gz/refs/tags/v1.4.3 && \
-    tar zxvf v1.4.3 && \
-    rm v1.4.3
 RUN wget https://codeload.github.com/ska-sa/pyxis/tar.gz/refs/tags/v1.7.1 && \
     tar zxvf v1.7.1 && \
     rm v1.7.1
-
-RUN pip3 install ./meqtrees-cattery-1.7.1 ./purr-1.5.0 ./owlcat-1.6.0 ./kittens-1.4.3
-RUN pip3 install -e ./pyxis-1.7.1
-
-WORKDIR /src
-RUN wget https://codeload.github.com/ska-sa/meqtrees-timba/tar.gz/refs/tags/v1.8.0 && \
-    tar zxvf v1.8.0 && \
-    rm v1.8.0
-RUN mkdir /src/meqtrees-timba-1.8.0/build
-WORKDIR /src/meqtrees-timba-1.8.0/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DENABLE_PYTHON_3=ON ..
-RUN make
-RUN make install
-RUN ldconfig
+RUN pip install -e ./pyxis-1.7.1
 
 WORKDIR /code
 ADD . /code/tigger-lsm
-RUN pip3 install ./tigger-lsm
+RUN pip install ./tigger-lsm
 
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
 # basic install tests
 RUN flag-ms.py --help
 RUN meqtree-pipeliner.py --help
 RUN pyxis --help
+
+# run end to end test when built
+RUN pip install nose
+WORKDIR /src/pyxis-1.7.1/Pyxis/recipes/meqtrees-batch-test
+RUN python -m "nose"
 
 #######################################
 # run oleg's new tests
@@ -85,13 +58,6 @@ RUN tigger-restore -f $GITHUB_WORKSPACE/test/3C147tmp.fits $GITHUB_WORKSPACE/tes
 
 #Test tigger-tag
 RUN tigger-tag $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html 'r<0.5d' inner=1 -o /tmp/tmp.lsm.html -f
-
-#######################################
-# end to end test
-#######################################
-RUN pip3 install nose
-WORKDIR /src/pyxis-1.7.1/Pyxis/recipes/meqtrees-batch-test
-RUN python3 -m "nose"
 
 ENTRYPOINT ["meqtree-pipeliner.py"]
 CMD ["--help"]

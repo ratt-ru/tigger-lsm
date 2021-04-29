@@ -345,7 +345,7 @@ class Projection(object):
             self._m0 = self.refpix[self.dec_axis]
 
         def lm(self, ra, dec):
-            l, m = super().lm(ra, dec)
+            l, m = Projection.FITSWCSpix.lm(self, ra, dec)
             return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
 
         def radec(self, l, m):
@@ -407,11 +407,11 @@ class Projection(object):
             self._m0 = self.refpix[self.dec_axis]
 
         def lm(self, ra, dec):
-            l, m = super().lm(ra, dec)
+            l, m = Projection.FITSWCSpix.lm(self, ra, dec)
             return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
 
         def radec(self, l, m):
-            return super().radec(arcsin(l / self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
+            return Projection.FITSWCSpix.radec(self, arcsin(l / self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
 
         def offset(self, dra, ddec):
             return sin(dra), sin(ddec)
