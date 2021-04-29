@@ -439,44 +439,44 @@ def save(model, filename, sources=None, format=None, **kw):
         ra, dec = src.pos.ra, src.pos.dec
         # RA in radians
         if ra_rad_field is not None:
-            fval[ra_rad_field] = str(ra)
+            fval[ra_rad_field] = repr(ra)
         ra /= ra_scale
         # RA in h/m/s or d/m/s
         if ra_m_field is not None:
             ra, ram, ras = src.pos.ra_hms_static(ra, scale=180, prec=1e-4)
-            fval[ra_m_field] = str(ram)
+            fval[ra_m_field] = repr(ram)
             if ra_s_field is not None:
-                fval[ra_s_field] = str(ras)
+                fval[ra_s_field] = repr(ras)
             if ra_d_field is not None:
-                fval[ra_d_field] = str(ra)
+                fval[ra_d_field] = repr(ra)
         elif ra_d_field is not None:
-            fval[ra_d_field] = str(ra * 180 / math.pi)
+            fval[ra_d_field] = repr(ra * 180 / math.pi)
         # position: Dec
         if dec_rad_field is not None:
-            fval[dec_rad_field] = str(dec)
+            fval[dec_rad_field] = repr(dec)
         if dec_m_field is not None:
             dsign, decd, decm, decs = src.pos.dec_sdms()
-            fval[dec_m_field] = str(decm)
+            fval[dec_m_field] = repr(decm)
             if dec_s_field is not None:
-                fval[dec_s_field] = str(decs)
+                fval[dec_s_field] = repr(decs)
             if dec_d_field is not None:
-                fval[dec_d_field] = dsign + str(decd)
+                fval[dec_d_field] = dsign + repr(decd)
         elif dec_d_field is not None:
-            fval[dec_d_field] = str(dec * 180 / math.pi)
+            fval[dec_d_field] = repr(dec * 180 / math.pi)
         # fluxes
         for stokes in "IQUV":
             field = format.get(stokes.lower())
             if field is not None:
-                fval[field] = str(getattr(src.flux, stokes, 0))
+                fval[field] = repr(getattr(src.flux, stokes, 0))
         # fractional polarization
         if 'pol_frac' in format:
             i, q, u = [getattr(src.flux, stokes, 0) for stokes in "IQU"]
-            fval[format['pol_frac']] = str(math.sqrt(q * q + u * u) / i)
+            fval[format['pol_frac']] = repr(math.sqrt(q * q + u * u) / i)
             pa = math.atan2(u, q) / 2
             for field, scale in ('pol_pa_rad', 1.), ('pol_pa_d', DEG):
                 ifield = format.get(field)
                 if ifield is not None:
-                    fval[ifield] = str(pa / scale)
+                    fval[ifield] = repr(pa / scale)
         # shape
         if src.shape:
             for parm, sparm in ("emaj", "ex"), ("emin", "ey"), ("pa", "pa"):
@@ -484,15 +484,15 @@ def save(model, filename, sources=None, format=None, **kw):
                 parm + '_s', DEG / 3600):
                     ifield = format.get(field.lower())
                     if ifield is not None:
-                        fval[ifield] = str(getattr(src.shape, sparm, 0) / scale)
+                        fval[ifield] = repr(getattr(src.shape, sparm, 0) / scale)
         # RM, spi, freq0
         if freq0_field is not None:
             freq0 = (src.spectrum and getattr(src.spectrum, 'freq0', None)) or getattr(src.flux, 'freq0', 0)
-            fval[freq0_field] = str(freq0)
+            fval[freq0_field] = repr(freq0)
         if rm_field is not None:
-            fval[rm_field] = str(getattr(src.flux, 'rm', 0))
+            fval[rm_field] = repr(getattr(src.flux, 'rm', 0))
         if spi_field is not None and hasattr(src, 'spectrum'):
-            fval[spi_field] = str(getattr(src.spectrum, 'spi', 0))
+            fval[spi_field] = repr(getattr(src.spectrum, 'spi', 0))
         # tags
         if tags_field is not None:
             outtags = []
@@ -505,7 +505,7 @@ def save(model, filename, sources=None, format=None, **kw):
                     else:
                         outtags.append("-" + tag)
                 elif isinstance(value, (int, float)):
-                    outtags.append("%s=%f" % (tag, value))
+                    outtags.append("%s=%s" % (tag, repr(value)))
             fval[tags_field] = ",".join(outtags)
         # write the line
         ff.write(" ".join(fval) + "\n")

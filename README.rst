@@ -16,7 +16,7 @@ from pypi or from source
 
 requirements:
 
- * Assorted python packages: pyfits, numpy, scipy, astLib.
+ * Assorted python packages: astropy, numpy, scipy, astLib, python-casacore, future.
  With the exception of astLib, these are already present in most Linux
  distros.  astLib may be downloaded here: http://astlib.sourceforge.net/
 

@@ -192,7 +192,7 @@ an output image is not specified, makes a name for it automatically.""")
     if options.pb and model.primaryBeam():
         try:
             pbexp = eval('lambda r,fq:' + model.primaryBeam())
-            dum = pbexp(0, 1e+9);  # evaluate at r=0 and 1 GHz as a test
+            dum = pbexp(0, 1e+9)  # evaluate at r=0 and 1 GHz as a test
             if not isinstance(dum, float):
                 raise TypeError("Primary beam expression does not evaluate to a float")
         except Exception as exc:
