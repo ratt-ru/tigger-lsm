@@ -213,15 +213,28 @@ class _Projector(object):
 def get_wcs_info(hdr):
     naxis = hdr['NAXIS']
     ra_axis = dec_axis = None
-    refpix = [hdr["CRPIX%d" % (iaxis+1)]-1 for iaxis in range(naxis)]
+    refpix = []
+    for iaxis in range(naxis):
+        if iaxis < 2:
+            refpix.append(hdr["CRPIX%d" % (iaxis+1)]-1)
+        else:
+            refpix.append(hdr["CRPIX%d" % (iaxis+1)])
     for iaxis in range(naxis):
         name = hdr.get("CTYPE%d" % (iaxis+1), '').upper()
         if name.startswith("RA"):
             ra_axis = iaxis
         elif name.startswith("DEC"):
             dec_axis = iaxis
-    wcs = WCS(hdr)  
-    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]    
+    # use WCS pixel information to build refsky
+    wcs = WCS(hdr)
+    wcs_pixel = wcs.pixel_shape
+    refsky_pixels = []
+    for ipixel in range(naxis):
+        if ipixel < 2:
+            refsky_pixels.append(int(wcs_pixel[ipixel]/2))
+        else:
+            refsky_pixels.append(wcs_pixel[ipixel])
+    refsky = wcs.wcs_pix2world([refsky_pixels], 0)[0, :]
     return wcs, refpix, refsky, ra_axis, dec_axis
 
 
@@ -243,14 +256,11 @@ class Projection(object):
                 self.wcs, self.refpix, self.refsky, self.ra_axis, self.dec_axis = get_wcs_info(header)
                 if self.ra_axis is None or self.dec_axis is None:
                     raise RuntimeError("Missing RA or DEC axis")
-                ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
+                ra0, dec0 = header['CRVAL1'], header['CRVAL2']
                 self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
-                refpix1 = np.array(self.refpix).copy()
-                refpix1[self.ra_axis] += 1
-                refpix1[self.dec_axis] += 1
-                delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
-                self.xscale = delta[self.ra_axis] * DEG
-                self.yscale = delta[self.dec_axis] * DEG
+                pixscale = (header["CDELT1"], header["CDELT2"])
+                self.xscale = pixscale[self.ra_axis] * DEG
+                self.yscale = pixscale[self.dec_axis] * DEG
                 has_projection = True
             except Exception as exc:
                 traceback.print_exc()
@@ -262,7 +272,6 @@ class Projection(object):
 
         def lm(self, ra, dec):
             if not self.has_projection():
-                print(f"Coordinates def lm() does not have projection")
                 return numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
             if numpy.isscalar(ra) and numpy.isscalar(dec):
                 if ra - self.ra0 > math.pi:
@@ -344,9 +353,6 @@ class Projection(object):
             Projection.FITSWCSpix.__init__(self, header)
             self._l0 = self.refpix[self.ra_axis]
             self._m0 = self.refpix[self.dec_axis]
-            self.xscale = self.wcs.to_header()["CDELT{}".format(self.ra_axis + 1)] * DEG
-            self.yscale = self.wcs.to_header()["CDELT{}".format(self.dec_axis + 1)] * DEG
-
 
         def old_lm(self, ra, dec):
             l, m = super().lm(ra, dec)
@@ -354,32 +360,22 @@ class Projection(object):
 
         def lm(self, ra, dec):
             if not self.has_projection():
-                print(f"Coordinates def lm() does not have projection")
                 return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
             if numpy.isscalar(ra) and numpy.isscalar(dec):
-                print(f"Coordinates def lm() is scalar")
                 if ra - self.ra0 > math.pi:
                     ra -= 2 * math.pi
-                    print(f"ra > math.pi {ra}")
                 if ra - self.ra0 < -math.pi:
                     ra += 2 * math.pi
-                    print(f"ra < math.pi {ra}")
                 skyvec = np.array(self.refsky).copy()
-                print(f"skyvec {skyvec} type {type(skyvec)}")
                 skyvec[self.ra_axis] = ra / DEG
-                print(f"skyvec ra / DEG {ra/DEG} skyvec {skyvec}")
                 skyvec[self.dec_axis] = dec / DEG
-                print(f"skyvec dec / DEG {ra/DEG} skyvec {skyvec}")
                 pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
-                print(f"pixvec {pixvec}")
                 if np.isnan(np.sum(pixvec)):
-                    l, m = -0.0, 0.0
-                    print(f"Coordinates def lm() is NaN l is now {l}, m is {m}")
+                    l, m = self._l0, self._m0
+                    # print(f"Coordinates def lm() is NaN l set to {l}, m set to {m}")
                 else:
                     l, m = pixvec[self.ra_axis], pixvec[self.dec_axis]
-                    print(f"scalar l {l}, m {m}")
             else:
-                print(f"Coordinates def lm() is NOT scalar")
                 if numpy.isscalar(ra):
                     ra = numpy.array(ra)
                 if numpy.isscalar(dec):
@@ -395,15 +391,12 @@ class Projection(object):
                 ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
                 lm = self.wcs.wcs_world2pix([skymat], 0)
                 l, m = lm[:, self.ra_axis], lm[:, self.dec_axis]
-            #l = (self.xpix0 - l) * self.xscale
-            #m = (m - self.ypix0) * self.yscale
             l = (l - self._l0) * self.xscale
             m = (m - self._m0) * self.yscale
             return l, m
 
         def radec(self, l, m):
             if not self.has_projection():
-                print(f"radec has no projection")
                 return numpy.arcsin(-l), numpy.arcsin(m)
             if numpy.isscalar(l) and numpy.isscalar(m):
                 pixvec = np.array(self.refpix).copy()
