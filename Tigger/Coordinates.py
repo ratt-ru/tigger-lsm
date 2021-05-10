@@ -341,28 +341,110 @@ class Projection(object):
         def __init__(self, header):
             """Constructor. Create from filename (treated as FITS file), or a FITS header object"""
             Projection.FITSWCSpix.__init__(self, header)
+            # init() has been modified to be a self contained workaround for Tigger v1.6.0
+            # get number of axis
+            naxis = header['NAXIS']
+
+            # get refpix
+            self.refpix = []
+            for iaxis in range(naxis):
+                if iaxis < 2:
+                    self.refpix.append(header["CRPIX%d" % (iaxis + 1)] - 1)
+                else:
+                    self.refpix.append(header["CRPIX%d" % (iaxis + 1)])
+
+            # get ra and dec axis
+            self.ra_axis = self.dec_axis = None
+            for iaxis in range(naxis):
+                name = header.get("CTYPE%d" % (iaxis + 1), '').upper()
+                if name.startswith("RA"):
+                    self.ra_axis = iaxis
+                elif name.startswith("DEC"):
+                    self.dec_axis = iaxis
+
+            # use WCS pixel information to build refsky
+            self.wcs = WCS(header)
+            wcs_pixel = self.wcs.pixel_shape
+            refsky_pixels = []
+            for ipixel in range(naxis):
+                if ipixel < 2:
+                    refsky_pixels.append(int(wcs_pixel[ipixel] / 2))
+                else:
+                    refsky_pixels.append(wcs_pixel[ipixel])
+            self.refsky = self.wcs.wcs_pix2world([refsky_pixels], 0)[0, :]
+
+            # set centre x/y pixels
+            self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
+
+            # set x/y scales
+            pixscale = (header["CDELT1"], header["CDELT2"])
+            self.xscale = pixscale[self.ra_axis] * DEG
+            self.yscale = pixscale[self.dec_axis] * DEG
+
+            has_projection = True
             self._l0 = self.refpix[self.ra_axis]
             self._m0 = self.refpix[self.dec_axis]
 
         def lm(self, ra, dec):
-            l, m = Projection.FITSWCSpix.lm(self, ra, dec)
-            return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
+            if not self.has_projection():
+                return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
+            if numpy.isscalar(ra) and numpy.isscalar(dec):
+                if ra - self.ra0 > math.pi:
+                    ra -= 2 * math.pi
+                if ra - self.ra0 < -math.pi:
+                    ra += 2 * math.pi
+                skyvec = np.array(self.refsky).copy()
+                skyvec[self.ra_axis] = ra / DEG
+                skyvec[self.dec_axis] = dec / DEG
+                pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
+                if np.isnan(np.sum(pixvec)):
+                    l, m = -0.0, 0.0
+                else:
+                    l, m = pixvec[self.ra_axis], pixvec[self.dec_axis]
+            else:
+                if numpy.isscalar(ra):
+                    ra = numpy.array(ra)
+                if numpy.isscalar(dec):
+                    dec = numpy.array(dec)
+                n = max(len(ra), len(dec))
+                skymat = numpy.array([self.refsky for _ in range(n)])
+                skymat[:, self.ra_axis] = ra / DEG
+                skymat[:, self.dec_axis] = dec / DEG
+                ra = skymat[:, self.ra_axis]
+                ra[ra - self.ra0 > 180] -= 360
+                ra[ra - self.ra0 < -180] += 360
+                ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
+                ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
+                lm = self.wcs.wcs_world2pix([skymat], 0)
+                l, m = lm[:, self.ra_axis], lm[:, self.dec_axis]
+            l = (l - self._l0) * self.xscale
+            m = (m - self._m0) * self.yscale
+            return l, m
 
         def radec(self, l, m):
-            pixvec = np.array(self.refpix).copy()
-            pixvec[self.ra_axis] = (self.xpix0 - l / self.xscale) + self._l0
-            pixvec[self.dec_axis] = (self.ypix0 + m / self.yscale) + self._m0
-            skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
-            ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
+            if not self.has_projection():
+                return numpy.arcsin(-l), numpy.arcsin(m)
+            if numpy.isscalar(l) and numpy.isscalar(m):
+                pixvec = np.array(self.refpix).copy()
+                pixvec[self.ra_axis] = self.xpix0 - l / self.xscale
+                pixvec[self.dec_axis] = self.ypix0 + m / self.yscale
+                skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
+                ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
+            else:
+                print("ERROR: tigger-lsm: Coordinates.py: radec(), l m is non-scalar")
+                # old tigger-lsm code that uses astLib
+                # radec = numpy.array(self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale))
+                # ra = radec[..., 0]
+                # dec = radec[..., 1]
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
-            return sin(dra), sin(ddec)
+            return dra, ddec  # removed sin()'s from this method to match the old tigger-lsm
 
     @staticmethod
     def FITSWCS_static(ra0, dec0):
         """
-        A static FITSWCS projection used by Tigger v.1.70, which is centred on the given ra0/dec0 coordinates,
+        A static FITSWCS projection used by Tigger v.1.60, which is centred on the given ra0/dec0 coordinates,
         with 0,0 being the reference pixel,
         """
         hdu = pyfits.PrimaryHDU()
