@@ -345,14 +345,6 @@ class Projection(object):
             # get number of axis
             naxis = header['NAXIS']
 
-            # get refpix
-            self.refpix = []
-            for iaxis in range(naxis):
-                if iaxis < 2:
-                    self.refpix.append(header["CRPIX%d" % (iaxis + 1)] - 1)
-                else:
-                    self.refpix.append(header["CRPIX%d" % (iaxis + 1)])
-
             # get ra and dec axis
             self.ra_axis = self.dec_axis = None
             for iaxis in range(naxis):
@@ -362,26 +354,24 @@ class Projection(object):
                 elif name.startswith("DEC"):
                     self.dec_axis = iaxis
 
-            # use WCS pixel information to build refsky
-            self.wcs = WCS(header)
-            wcs_pixel = self.wcs.pixel_shape
-            refsky_pixels = []
-            for ipixel in range(naxis):
-                if ipixel < 2:
-                    refsky_pixels.append(int(wcs_pixel[ipixel] / 2))
-                else:
-                    refsky_pixels.append(wcs_pixel[ipixel])
-            self.refsky = self.wcs.wcs_pix2world([refsky_pixels], 0)[0, :]
+            # get refpix
+            self.refpix = [header["CRPIX%d" % (iaxis + 1)] - 1 for iaxis in range(naxis)]
+
+            # get refsky
+            self.refsky = self.wcs.wcs_pix2world([self.refpix], 0)[0, :]
 
             # set centre x/y pixels
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
 
             # set x/y scales
-            pixscale = (header["CDELT1"], header["CDELT2"])
-            self.xscale = pixscale[self.ra_axis] * DEG
-            self.yscale = pixscale[self.dec_axis] * DEG
+            pix_scales = self.wcs.wcs.cdelt
+            self.xscale = pix_scales[self.ra_axis] * DEG
+            self.yscale = pix_scales[self.dec_axis] * DEG
 
+            # set projection
             has_projection = True
+
+            # set l0, m0
             self._l0 = self.refpix[self.ra_axis]
             self._m0 = self.refpix[self.dec_axis]
 
