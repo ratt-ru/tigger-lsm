@@ -62,6 +62,9 @@ import locale
 locale.setlocale(locale.LC_NUMERIC, 'C')
 
 from astropy.wcs import WCS, FITSFixedWarning
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from astropy.wcs import utils
 import PyWCSTools.wcs
 
 startup_dprint(1, "imported WCS")
@@ -333,15 +336,21 @@ class Projection(object):
     ## RAZ 19/4/2021: FITSWCS is still needed by Tigger v1.6.0. The SinWCS Class was not compatible with Tigger v1.6.0.
     ## Tigger *does* use FITSWCS for coordinate conversions.
 
-    class FITSWCS(FITSWCSpix):
+    class FITSWCS(_Projector):
         """FITS WCS projection used by Tigger v1.6.0, as determined by a FITS header.
         lm is renormalized to radians, l is reversed, 0,0 is at reference pixel.
         """
 
         def __init__(self, header):
             """Constructor. Create from filename (treated as FITS file), or a FITS header object"""
-            Projection.FITSWCSpix.__init__(self, header)
             # init() has been modified to be a self contained workaround for Tigger v1.6.0
+            # Test file model/2015/combined-4M5S.fits has NAXIS = 3 and WCS AXES = 4,
+            # pix2world then fails expecting N x 4. Using astropy wcs methods and not sub-classing FITSWCSpix
+            # avoids the error and a reliance on naxis.
+
+            # get astropy WCS
+            self.wcs = WCS(header)
+
             # get number of axis
             naxis = header['NAXIS']
 
@@ -355,10 +364,14 @@ class Projection(object):
                     self.dec_axis = iaxis
 
             # get refpix
-            self.refpix = [header["CRPIX%d" % (iaxis + 1)] - 1 for iaxis in range(naxis)]
+            crpix = self.wcs.wcs.crpix
+            self.refpix = crpix - 1
 
             # get refsky
             self.refsky = self.wcs.wcs_pix2world([self.refpix], 0)[0, :]
+
+            # get ra0, dec0
+            ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
 
             # set centre x/y pixels
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
@@ -368,68 +381,43 @@ class Projection(object):
             self.xscale = pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
 
-            # set projection
-            has_projection = True
-
             # set l0, m0
             self._l0 = self.refpix[self.ra_axis]
             self._m0 = self.refpix[self.dec_axis]
 
+            # set projection
+            has_projection = True
+            _Projector.__init__(self, ra0 * DEG, dec0 * DEG, has_projection=has_projection)
+
         def lm(self, ra, dec):
-            if not self.has_projection():
-                return -numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
-            if numpy.isscalar(ra) and numpy.isscalar(dec):
-                if ra - self.ra0 > math.pi:
-                    ra -= 2 * math.pi
-                if ra - self.ra0 < -math.pi:
-                    ra += 2 * math.pi
-                skyvec = np.array(self.refsky).copy()
-                skyvec[self.ra_axis] = ra / DEG
-                skyvec[self.dec_axis] = dec / DEG
-                pixvec = self.wcs.wcs_world2pix([skyvec], 0)[0]
-                if np.isnan(np.sum(pixvec)):
-                    l, m = -0.0, 0.0
-                else:
-                    l, m = pixvec[self.ra_axis], pixvec[self.dec_axis]
+            coord = SkyCoord(ra=ra * u.rad, dec=dec * u.rad)
+            coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            if np.isnan(np.sum(coord_pixels)):
+                l, m = -0.0, 0.0
             else:
-                if numpy.isscalar(ra):
-                    ra = numpy.array(ra)
-                if numpy.isscalar(dec):
-                    dec = numpy.array(dec)
-                n = max(len(ra), len(dec))
-                skymat = numpy.array([self.refsky for _ in range(n)])
-                skymat[:, self.ra_axis] = ra / DEG
-                skymat[:, self.dec_axis] = dec / DEG
-                ra = skymat[:, self.ra_axis]
-                ra[ra - self.ra0 > 180] -= 360
-                ra[ra - self.ra0 < -180] += 360
-                ## when fed in arrays of ra/dec, wcs.wcs2pix will return a nested list of
-                ## [[l1,m1],[l2,m2],,...]. Convert this to an array and extract columns.
-                lm = self.wcs.wcs_world2pix([skymat], 0)
-                l, m = lm[:, self.ra_axis], lm[:, self.dec_axis]
+                l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
             l = (l - self._l0) * self.xscale
             m = (m - self._m0) * self.yscale
             return l, m
 
         def radec(self, l, m):
-            if not self.has_projection():
-                return numpy.arcsin(-l), numpy.arcsin(m)
-            if numpy.isscalar(l) and numpy.isscalar(m):
-                pixvec = np.array(self.refpix).copy()
-                pixvec[self.ra_axis] = self.xpix0 - l / self.xscale
-                pixvec[self.dec_axis] = self.ypix0 + m / self.yscale
-                skyvec = self.wcs.wcs_pix2world([pixvec], 0)[0]
-                ra, dec = skyvec[self.ra_axis], skyvec[self.dec_axis]
-            else:
-                print("ERROR: tigger-lsm: Coordinates.py: radec(), l m is non-scalar")
-                # old tigger-lsm code that uses astLib
-                # radec = numpy.array(self.wcs.pix2wcs(self.xpix0 - l / self.xscale, self.ypix0 + m / self.yscale))
-                # ra = radec[..., 0]
-                # dec = radec[..., 1]
+            x = self.xpix0 - l / self.xscale
+            y = self.ypix0 + m / self.yscale
+            coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
+            ra = coord.ra.value
+            dec = coord.dec.value
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
-            return dra, ddec  # removed sin()'s from this method to match the old tigger-lsm
+            # old tigger-lsm had 'return dra, ddec'
+            # using new tigger-lsm SinWCS default
+            return sin(dra), sin(ddec)
+
+        def __eq__(self, other):
+            """By default, two projections are the same if their classes match, and their ra0/dec0 match."""
+            return type(self) is type(other) and (
+                self.ra0, self.dec0, self.xpix0, self.ypix0, self.xscale, self.yscale) == (
+                       other.ra0, other.dec0, other.xpix0, other.ypix0, other.xscale, other.yscale)
 
     @staticmethod
     def FITSWCS_static(ra0, dec0):
