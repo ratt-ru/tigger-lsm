@@ -252,7 +252,7 @@ class Projection(object):
                 refpix1[self.ra_axis] += 1
                 refpix1[self.dec_axis] += 1
                 delta = self.wcs.wcs_pix2world([refpix1], 0)[0] - self.refsky
-                self.xscale = delta[self.ra_axis] * DEG
+                self.xscale = -delta[self.ra_axis] * DEG
                 self.yscale = delta[self.dec_axis] * DEG
                 has_projection = True
             except Exception as exc:
@@ -265,7 +265,7 @@ class Projection(object):
 
         def lm(self, ra, dec):
             if not self.has_projection():
-                return numpy.sin(ra) / self.xscale, numpy.sin(dec) / self.yscale
+                return numpy.sin(ra) / -self.xscale, numpy.sin(dec) / self.yscale
             if numpy.isscalar(ra) and numpy.isscalar(dec):
                 if ra - self.ra0 > math.pi:
                     ra -= 2 * math.pi
@@ -295,7 +295,7 @@ class Projection(object):
 
         def radec(self, l, m):
             if not self.has_projection():
-                return numpy.arcsin(l * self.xscale), numpy.arcsin(m * self.yscale)
+                return numpy.arcsin(l * -self.xscale), numpy.arcsin(m * self.yscale)
             if numpy.isscalar(l) and numpy.isscalar(m):
                 pixvec = np.array(self.refpix).copy()
                 pixvec[self.ra_axis] = l
@@ -320,7 +320,7 @@ class Projection(object):
 
         def offset(self, dra, ddec):
             """ dra and ddec must be in radians """
-            return self.xpix0 + dra / self.xscale, self.ypix0 + ddec / self.xscale
+            return self.xpix0 + dra / -self.xscale, self.ypix0 + ddec / self.xscale
             # TODO - investigate; old code has 'self.xpix0 - dra...', new code is 'self.xpix0 + dra...'?
             # return self.xpix0 - dra / self.xscale, self.ypix0 + ddec / self.xscale
 
@@ -378,7 +378,7 @@ class Projection(object):
 
             # set x/y scales
             pix_scales = self.wcs.wcs.cdelt
-            self.xscale = pix_scales[self.ra_axis] * DEG
+            self.xscale = -pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
 
             # set l0, m0
@@ -396,12 +396,12 @@ class Projection(object):
                 l, m = -0.0, 0.0
             else:
                 l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
-            l = (l - self._l0) * self.xscale
+            l = (l - self._l0) * -self.xscale
             m = (m - self._m0) * self.yscale
             return l, m
 
         def radec(self, l, m):
-            x = self.xpix0 - l / self.xscale
+            x = self.xpix0 + l / -self.xscale
             y = self.ypix0 + m / self.yscale
             coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
             ra = coord.ra.value
@@ -468,10 +468,10 @@ class Projection(object):
 
         def lm(self, ra, dec):
             l, m = Projection.FITSWCSpix.lm(self, ra, dec)
-            return sin((l - self._l0) * self.xscale), sin((m - self._m0)*self.yscale)
+            return sin((l - self._l0) * -self.xscale), sin((m - self._m0)*self.yscale)
 
         def radec(self, l, m):
-            return Projection.FITSWCSpix.radec(self, arcsin(l / self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
+            return Projection.FITSWCSpix.radec(self, arcsin(l / -self.xscale + self._l0), arcsin(m / self.yscale + self._m0))
 
         def offset(self, dra, ddec):
             return sin(dra), sin(ddec)
