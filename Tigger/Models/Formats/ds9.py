@@ -123,7 +123,7 @@ class Ellipse(RegionProperties):
         self.pre_specs = []
 
     def __repr__(self):
-        return f"{self.__class__.__name__.lower()}({x},{y},{maj},{minor},{angle})"
+        return f"{self.__class__.__name__}({self.x},{self.y},{self.maj},{self.minor},{self.angle})"
 
     def fill(self, on):
         if on:
