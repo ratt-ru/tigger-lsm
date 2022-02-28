@@ -42,7 +42,7 @@ def _initFormats():
     """Initializes all known formats by importing their modules"""
     global _FormatsInitialized
     if not _FormatsInitialized:
-        for format in ["ModelHTML", "ASCII", "BBS", "NEWSTAR", "AIPSCC", "AIPSCCFITS", "PyBDSMGaul"]:
+        for format in ["ModelHTML", "ASCII", "BBS", "NEWSTAR", "AIPSCC", "AIPSCCFITS", "PyBDSMGaul", "ds9"]:
             try:
                 importlib.import_module("Tigger.Models.Formats." + format)
             except:
