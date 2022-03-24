@@ -266,8 +266,8 @@ class LSM2Reg:
         pass
     
     @staticmethod
-    def load_lsm(fname):
-        print(f"Reading LSM file: {fname}")
+    def load_input(fname, **kwargs):
+        print(f"Reading input file: {fname}")
         models = Tigger.load(fname)
         return models
 
@@ -321,8 +321,6 @@ class LSM2Reg:
         cls.save(regions, out_name)
 
 
-import Tigger.Models.Formats
-
 Tigger.Models.Formats.registerFormat(
-    "DS9", LSM2Reg.load_lsm, "DS9 region file", (".reg",),
+    "DS9", None, "DS9 region file", (".reg",),
     export_func=LSM2Reg.generate_regions)
