@@ -24,6 +24,8 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 from __future__ import print_function, division, absolute_import
+
+from astropy.wcs.wcs import InvalidTransformError
 import Tigger
 from Tigger import startup_dprint
 
@@ -34,7 +36,7 @@ import numpy
 import traceback
 import warnings
 import numpy as np
-from numpy import sin, cos, arcsin
+from numpy import ndarray, sin, cos, arcsin
 
 startup_dprint(1, "imported numpy")
 
@@ -223,8 +225,8 @@ def get_wcs_info(hdr):
             ra_axis = iaxis
         elif name.startswith("DEC"):
             dec_axis = iaxis
-    wcs = WCS(hdr)  
-    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]    
+    wcs = WCS(hdr)
+    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]
     return wcs, refpix, refsky, ra_axis, dec_axis
 
 
@@ -348,21 +350,42 @@ class Projection(object):
             # pix2world then fails expecting N x 4. Using astropy wcs methods and not sub-classing FITSWCSpix
             # avoids the error and a reliance on naxis.
 
-            # get astropy WCS
-            self.wcs = WCS(header)
-
             # get number of axis
             naxis = header['NAXIS']
 
+            # get astropy WCS
+            try:
+                self.wcs = WCS(header)
+            except InvalidTransformError as e:
+                if 'CUNIT' not in str(e):
+                    raise RuntimeError(f"Error WCS header {e}") from e
+                for iaxis in range(naxis):
+                    name = header.get("CUNIT%d" % (iaxis + 1), '').upper()
+                    if name.startswith("M/S"):
+                        header.set("CUNIT%d" % (iaxis + 1), 'm/s')
+                try:
+                    self.wcs = WCS(header)
+                except InvalidTransformError as e:
+                    raise RuntimeError(f"Error WCS header {e}") from e
+
             # get ra and dec axis
             self.ra_axis = self.dec_axis = None
+            self.radesys = None
             for iaxis in range(naxis):
                 name = header.get("CTYPE%d" % (iaxis + 1), '').upper()
                 if name.startswith("RA"):
                     self.ra_axis = iaxis
                 elif name.startswith("DEC"):
                     self.dec_axis = iaxis
+                elif name.startswith("GLON") or name.startswith("GLAT"):
+                    self.radesys = 'galactic'
+                elif name.startswith("ELON") or name.startswith("ELAT"):
+                    self.radesys = 'geocentricmeanecliptic'
 
+            # set frame type or default to ICRS
+            if self.radesys is None:
+                _radesys = header.get("RADESYS")
+                self.radesys = _radesys.strip().lower() if _radesys is not None else 'icrs'
             # get refpix
             crpix = self.wcs.wcs.crpix
             self.refpix = crpix - 1
@@ -377,6 +400,11 @@ class Projection(object):
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
 
             # set x/y scales
+            # Use CD if available 
+            # if hasattr(self.wcs.wcs, 'cd'):
+            #     pix_scales = self.wcs.wcs.cd
+            # else:
+            #     pix_scales = self.wcs.wcs.cdelt
             pix_scales = self.wcs.wcs.cdelt
             self.xscale = -pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
@@ -389,11 +417,46 @@ class Projection(object):
             has_projection = True
             _Projector.__init__(self, ra0 * DEG, dec0 * DEG, has_projection=has_projection)
 
+        def check_angles(self, dec):
+            """Checks that angle is -90 > angle < 90. Adapted from astropy intrenals."""
+            try:
+                _check = dec * u.rad.to(u.deg)
+                if isinstance(_check, ndarray):
+                    with numpy.errstate(invalid='ignore'):
+                        invalid_angles = (numpy.any(_check < -90)
+                                          or numpy.any(_check > 90))
+                    return not invalid_angles
+                elif -90 <= _check <= 90:
+                    return True
+                else:
+                    return False
+            except:
+                return False
+
         def lm(self, ra, dec):
-            coord = SkyCoord(ra=ra * u.rad, dec=dec * u.rad)
-            coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            if self.radesys == 'galactic':
+                coord = SkyCoord(l=ra * u.deg, b=dec * u.deg, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            elif self.radesys == 'geocentricmeanecliptic':
+                coord = SkyCoord(lon=ra * u.arcsec, lat=dec * u.arcsec, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+                coord_pixels = np.array([coord_pixels[0][0][0], coord_pixels[1][0][0]])
+                print(coord_pixels[0], coord_pixels[1])
+            elif self.check_angles(dec):
+                coord = SkyCoord(ra * u.rad, dec * u.rad, frame=self.radesys)
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            else:
+                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}")
+            print(coord)
             if np.isnan(np.sum(coord_pixels)):
                 l, m = -0.0, 0.0
+            # elif self.ra_axis is None or self.dec_axis is None:
+            #     self.ra_axis = 0
+            #     self.dec_axis = 1
+            #     print(coord_pixels)
+            #     l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
             else:
                 l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
             l = (l - self._l0) * -self.xscale
@@ -475,4 +538,3 @@ class Projection(object):
 
         def offset(self, dra, ddec):
             return sin(dra), sin(ddec)
-
