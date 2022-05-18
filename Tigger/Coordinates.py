@@ -386,26 +386,39 @@ class Projection(object):
             if self.radesys is None:
                 _radesys = header.get("RADESYS")
                 self.radesys = _radesys.strip().lower() if _radesys is not None else 'icrs'
+            
             # get refpix
-            crpix = self.wcs.wcs.crpix
-            self.refpix = crpix - 1
+            if hasattr(self.wcs.wcs, 'crpix'):
+                crpix = self.wcs.wcs.crpix
+                self.refpix = crpix - 1
+            else:
+                # set default if not found
+                crpix = np.array([1., 1.])
+                self.wcs.wcs.crpix = crpix
+                self.refpix = crpix - 1
 
             # get refsky
             self.refsky = self.wcs.wcs_pix2world([self.refpix], 0)[0, :]
-
+            
+            # set selectors
+            if self.ra_axis is None and self.dec_axis is None:
+                if np.ndim(self.refsky) == 1:
+                    self.ra_axis = 0
+                    self.dec_axis = 1
+                    
             # get ra0, dec0
             ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
-
             # set centre x/y pixels
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
 
             # set x/y scales
-            # Use CD if available 
-            # if hasattr(self.wcs.wcs, 'cd'):
-            #     pix_scales = self.wcs.wcs.cd
-            # else:
-            #     pix_scales = self.wcs.wcs.cdelt
-            pix_scales = self.wcs.wcs.cdelt
+            if hasattr(self.wcs.wcs, 'cdelt'):
+                pix_scales = self.wcs.wcs.cdelt
+            else:
+                # set default if not found
+                pix_scales = np.array([1., 1.])
+                self.wcs.wcs.cdelt = pix_scales
+            
             self.xscale = -pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
 
@@ -442,21 +455,15 @@ class Projection(object):
                 coord = SkyCoord(lon=ra * u.arcsec, lat=dec * u.arcsec, frame=self.radesys)
                 coord = coord.transform_to('icrs')
                 coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
-                coord_pixels = np.array([coord_pixels[0][0][0], coord_pixels[1][0][0]])
-                print(coord_pixels[0], coord_pixels[1])
+                coord_pixels = np.array([coord_pixels[0], coord_pixels[1]])
             elif self.check_angles(dec):
                 coord = SkyCoord(ra * u.rad, dec * u.rad, frame=self.radesys)
                 coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
             else:
-                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}")
-            print(coord)
+                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}. Check Units, they may be incorrect.")
+            
             if np.isnan(np.sum(coord_pixels)):
                 l, m = -0.0, 0.0
-            # elif self.ra_axis is None or self.dec_axis is None:
-            #     self.ra_axis = 0
-            #     self.dec_axis = 1
-            #     print(coord_pixels)
-            #     l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
             else:
                 l, m = coord_pixels[self.ra_axis], coord_pixels[self.dec_axis]
             l = (l - self._l0) * -self.xscale
