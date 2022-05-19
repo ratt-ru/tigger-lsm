@@ -386,7 +386,7 @@ class Projection(object):
             if self.radesys is None:
                 _radesys = header.get("RADESYS")
                 self.radesys = _radesys.strip().lower() if _radesys is not None else 'icrs'
-            
+
             # get refpix
             if hasattr(self.wcs.wcs, 'crpix'):
                 crpix = self.wcs.wcs.crpix
@@ -399,26 +399,30 @@ class Projection(object):
 
             # get refsky
             self.refsky = self.wcs.wcs_pix2world([self.refpix], 0)[0, :]
-            
+
             # set selectors
             if self.ra_axis is None and self.dec_axis is None:
                 if np.ndim(self.refsky) == 1:
                     self.ra_axis = 0
                     self.dec_axis = 1
-                    
+
             # get ra0, dec0
             ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
             # set centre x/y pixels
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
 
             # set x/y scales
-            if hasattr(self.wcs.wcs, 'cdelt'):
-                pix_scales = self.wcs.wcs.cdelt
+            # calling cdelt when cd is found causes a warning
+            if not self.wcs.wcs.has_cd():
+                if hasattr(self.wcs.wcs, 'cdelt'):
+                    pix_scales = self.wcs.wcs.cdelt
             else:
-                # set default if not found
-                pix_scales = np.array([1., 1.])
-                self.wcs.wcs.cdelt = pix_scales
-            
+                pix_scales = self.wcs.wcs.get_cdelt()
+                if not np.size(pix_scales):
+                    # set default if not found
+                    pix_scales = np.array([1., 1.])
+                    self.wcs.wcs.cdelt = pix_scales
+
             self.xscale = -pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
 
@@ -461,7 +465,7 @@ class Projection(object):
                 coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
             else:
                 raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}. Check Units, they may be incorrect.")
-            
+
             if np.isnan(np.sum(coord_pixels)):
                 l, m = -0.0, 0.0
             else:
