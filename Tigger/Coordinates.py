@@ -478,8 +478,15 @@ class Projection(object):
             x = self.xpix0 + l / -self.xscale
             y = self.ypix0 + m / self.yscale
             coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
-            ra = coord.ra.value
-            dec = coord.dec.value
+            if self.radesys == 'galactic':
+                ra = coord.l.value
+                dec = coord.b.value
+            elif self.radesys == 'geocentricmeanecliptic':
+                ra = coord.lon.value
+                dec = coord.lat.value
+            else:
+                ra = coord.ra.value
+                dec = coord.dec.value
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
