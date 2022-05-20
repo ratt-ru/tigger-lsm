@@ -479,11 +479,13 @@ class Projection(object):
             y = self.ypix0 + m / self.yscale
             coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
             if self.radesys == 'galactic':
-                ra = coord.l.value
-                dec = coord.b.value
+                coord = coord.transform_to('icrs')
+                ra = coord.ra.value
+                dec = coord.dec.value
             elif self.radesys == 'geocentricmeanecliptic':
-                ra = coord.lon.value
-                dec = coord.lat.value
+                coord = coord.transform_to('icrs')
+                ra = coord.ra.value
+                dec = coord.dec.value
             else:
                 ra = coord.ra.value
                 dec = coord.dec.value
