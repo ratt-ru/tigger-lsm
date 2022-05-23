@@ -380,7 +380,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
     # figure out input type
     try:
         input_type, import_func, dum, input_doc = Tigger.Models.Formats.resolveFormat(skymodel,
-                                                                                      options.type if options.type != AUTO else None)
+                                                                                      options.type if options.type != AUTO else None, io="input")
     except:
         print("Unable to determine model type for %s, please specify one explicitly with the -t/--type option." % skymodel)
         sys.exit(1)
@@ -411,7 +411,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
     # else output name is specified, use this to determine format unless it is explicitly set
     elif not output_type:
         try:
-            output_type, dum, export_func, output_doc = Tigger.Models.Formats.resolveFormat(output, None)
+            output_type, dum, export_func, output_doc = Tigger.Models.Formats.resolveFormat(output, None, io="output")
         except:
             export_func = None
         if not export_func:
@@ -446,7 +446,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
             # figure out input type
             try:
                 append_type, append_func, dum, append_doc = Tigger.Models.Formats.resolveFormat(filename,
-                                                                                                options.append_type if options.append_type != AUTO else None)
+                                                                                                options.append_type if options.append_type != AUTO else None, io="input")
             except:
                 print("Unable to determine model type for %s, please specify one explicitly with the --append-type option." % filename)
                 sys.exit(1)

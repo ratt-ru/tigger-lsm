@@ -42,7 +42,7 @@ def _initFormats():
     """Initializes all known formats by importing their modules"""
     global _FormatsInitialized
     if not _FormatsInitialized:
-        for format in ["ModelHTML", "ASCII", "BBS", "NEWSTAR", "AIPSCC", "AIPSCCFITS", "PyBDSMGaul"]:
+        for format in ["ModelHTML", "ASCII", "BBS", "NEWSTAR", "AIPSCC", "AIPSCCFITS", "PyBDSMGaul", "ds9"]:
             try:
                 importlib.import_module("Tigger.Models.Formats." + format)
             except:
@@ -96,17 +96,21 @@ def listFormatsFull():
     return [(name, Formats[name]) for name in _FormatList]
 
 
-def resolveFormat(filename, format):
+def resolveFormat(filename, format, io="input"):
     """Helper function, resolves format/filename arguments to a format tuple"""
     _initFormats()
+    
+    io_type = dict(input=None, output=None)
     if format:
-        name, import_func, export_func, doc = getFormat(format)
-        if not import_func:
+        name, io_type["input"], io_type["output"], doc = getFormat(format)
+        if not io_type[io]:
             raise TypeError("Unknown model format '%s'" % format)
     else:
-        name, import_func, export_func, doc = determineFormat(filename)
-        if not import_func:
+        name, io_type["input"], io_type["output"], doc = determineFormat(filename)
+        if not io_type[io]:
             raise TypeError("Cannot determine model format from filename '%s'" % filename)
+    
+    import_func, export_func = io_type["input"], io_type["output"]
     return name, import_func, export_func, doc
 
 
