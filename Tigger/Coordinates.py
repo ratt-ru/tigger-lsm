@@ -451,20 +451,24 @@ class Projection(object):
                 return False
 
         def lm(self, ra, dec):
+            """ra and dec are in rad units"""
+            if not self.check_angles(dec):
+                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}. Check Units, they may be incorrect.")
+
             if self.radesys == 'galactic':
-                coord = SkyCoord(l=ra * u.deg, b=dec * u.deg, frame=self.radesys)
+                coord = SkyCoord(l=ra * u.rad, b=dec * u.rad, frame=self.radesys)
                 coord = coord.transform_to('icrs')
                 coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
             elif self.radesys == 'geocentricmeanecliptic':
-                coord = SkyCoord(lon=ra * u.arcsec, lat=dec * u.arcsec, frame=self.radesys)
+                coord = SkyCoord(lon=ra * u.rad, lat=dec * u.rad, frame=self.radesys)
                 coord = coord.transform_to('icrs')
                 coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
                 coord_pixels = np.array([coord_pixels[0], coord_pixels[1]])
-            elif self.check_angles(dec):
-                coord = SkyCoord(ra * u.rad, dec * u.rad, frame=self.radesys)
-                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
             else:
-                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}. Check Units, they may be incorrect.")
+                # ICRS, FK4, FK5, etc
+                coord = SkyCoord(ra * u.rad, dec * u.rad, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
 
             if np.isnan(np.sum(coord_pixels)):
                 l, m = -0.0, 0.0
@@ -478,17 +482,9 @@ class Projection(object):
             x = self.xpix0 + l / -self.xscale
             y = self.ypix0 + m / self.yscale
             coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
-            if self.radesys == 'galactic':
-                coord = coord.transform_to('icrs')
-                ra = coord.ra.value
-                dec = coord.dec.value
-            elif self.radesys == 'geocentricmeanecliptic':
-                coord = coord.transform_to('icrs')
-                ra = coord.ra.value
-                dec = coord.dec.value
-            else:
-                ra = coord.ra.value
-                dec = coord.dec.value
+            coord = coord.transform_to('icrs')
+            ra = coord.ra.value
+            dec = coord.dec.value
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
