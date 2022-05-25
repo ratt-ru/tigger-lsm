@@ -29,7 +29,7 @@ setup(
     extras_require=extras_require,
     scripts=scripts,
     package_data=package_data,
-    python_requires='>=2.7.0',
+    python_requires='>=3.6',
     description="Python libraries and command-line tools for manipulating Tigger-format LSMs",
     author="Oleg Smirnov",
     author_email="osmirnov@gmail.com",

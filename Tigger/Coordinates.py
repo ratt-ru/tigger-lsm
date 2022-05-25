@@ -368,6 +368,7 @@ class Projection(object):
                 except InvalidTransformError as e:
                     raise RuntimeError(f"Error WCS header {e}") from e
 
+
             # get ra and dec axis
             self.ra_axis = self.dec_axis = None
             self.radesys = None

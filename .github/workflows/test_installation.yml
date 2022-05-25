@@ -67,3 +67,7 @@ jobs:
     - name: Test tigger-tag
       run: |
         tigger-tag $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html 'r<0.5d' inner=1 -o /tmp/tmp.lsm.html -f
+    - name: Test .lsm to ds9 region file conversion
+      run: |
+        echo "Checking lsm.html to .reg conversion"
+        tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/3C147-HI6.refmodel.lsm.reg -f 
