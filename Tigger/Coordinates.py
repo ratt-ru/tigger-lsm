@@ -24,6 +24,8 @@
 # 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 from __future__ import print_function, division, absolute_import
+
+from astropy.wcs.wcs import InvalidTransformError
 import Tigger
 from Tigger import startup_dprint
 
@@ -348,11 +350,27 @@ class Projection(object):
             # pix2world then fails expecting N x 4. Using astropy wcs methods and not sub-classing FITSWCSpix
             # avoids the error and a reliance on naxis.
 
-            # get astropy WCS
-            self.wcs = WCS(header)
-
             # get number of axis
             naxis = header['NAXIS']
+
+            # get astropy WCS
+            try:
+                self.wcs = WCS(header)
+            except InvalidTransformError as e:
+                if 'CUNIT' in str(e):
+                    # check header for incorrect CUNIT entry 'M/S'
+                    for iaxis in range(naxis):
+                        name = header.get("CUNIT%d" % (iaxis + 1), '').upper()
+                        if name.startswith("M/S"):
+                            # correct the header
+                            header.set("CUNIT%d" % (iaxis + 1), 'm/s')
+                    # re-load WCS
+                    try:
+                        self.wcs = WCS(header)
+                    except InvalidTransformError as e:
+                        raise RuntimeError(f"Error WCS header {e}")
+                else:
+                    raise RuntimeError(f"Error WCS header {e}")
 
             # get ra and dec axis
             self.ra_axis = self.dec_axis = None
