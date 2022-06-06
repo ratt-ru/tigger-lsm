@@ -36,7 +36,7 @@ import numpy
 import traceback
 import warnings
 import numpy as np
-from numpy import sin, cos, arcsin
+from numpy import ndarray, sin, cos, arcsin
 
 startup_dprint(1, "imported numpy")
 
@@ -225,8 +225,8 @@ def get_wcs_info(hdr):
             ra_axis = iaxis
         elif name.startswith("DEC"):
             dec_axis = iaxis
-    wcs = WCS(hdr)  
-    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]    
+    wcs = WCS(hdr)
+    refsky = wcs.wcs_pix2world([refpix], 0)[0,:]
     return wcs, refpix, refsky, ra_axis, dec_axis
 
 
@@ -357,45 +357,73 @@ class Projection(object):
             try:
                 self.wcs = WCS(header)
             except InvalidTransformError as e:
-                if 'CUNIT' in str(e):
-                    # check header for incorrect CUNIT entry 'M/S'
-                    for iaxis in range(naxis):
-                        name = header.get("CUNIT%d" % (iaxis + 1), '').upper()
-                        if name.startswith("M/S"):
-                            # correct the header
-                            header.set("CUNIT%d" % (iaxis + 1), 'm/s')
-                    # re-load WCS
-                    try:
-                        self.wcs = WCS(header)
-                    except InvalidTransformError as e:
-                        raise RuntimeError(f"Error WCS header {e}")
-                else:
-                    raise RuntimeError(f"Error WCS header {e}")
+                if 'CUNIT' not in str(e):
+                    raise RuntimeError(f"Error WCS header {e}") from e
+                for iaxis in range(naxis):
+                    name = header.get("CUNIT%d" % (iaxis + 1), '').upper()
+                    if name.startswith("M/S"):
+                        header.set("CUNIT%d" % (iaxis + 1), 'm/s')
+                try:
+                    self.wcs = WCS(header)
+                except InvalidTransformError as e:
+                    raise RuntimeError(f"Error WCS header {e}") from e
+
 
             # get ra and dec axis
             self.ra_axis = self.dec_axis = None
+            self.radesys = None
             for iaxis in range(naxis):
                 name = header.get("CTYPE%d" % (iaxis + 1), '').upper()
                 if name.startswith("RA"):
                     self.ra_axis = iaxis
                 elif name.startswith("DEC"):
                     self.dec_axis = iaxis
+                elif name.startswith("GLON") or name.startswith("GLAT"):
+                    self.radesys = 'galactic'
+                elif name.startswith("ELON") or name.startswith("ELAT"):
+                    self.radesys = 'geocentricmeanecliptic'
+
+            # set frame type or default to ICRS
+            if self.radesys is None:
+                _radesys = header.get("RADESYS")
+                self.radesys = _radesys.strip().lower() if _radesys is not None else 'icrs'
 
             # get refpix
-            crpix = self.wcs.wcs.crpix
-            self.refpix = crpix - 1
+            if hasattr(self.wcs.wcs, 'crpix'):
+                crpix = self.wcs.wcs.crpix
+                self.refpix = crpix - 1
+            else:
+                # set default if not found
+                crpix = np.array([1., 1.])
+                self.wcs.wcs.crpix = crpix
+                self.refpix = crpix - 1
 
             # get refsky
             self.refsky = self.wcs.wcs_pix2world([self.refpix], 0)[0, :]
 
+            # set selectors
+            if self.ra_axis is None and self.dec_axis is None:
+                if np.ndim(self.refsky) == 1:
+                    self.ra_axis = 0
+                    self.dec_axis = 1
+
             # get ra0, dec0
             ra0, dec0 = self.refsky[self.ra_axis], self.refsky[self.dec_axis]
-
             # set centre x/y pixels
             self.xpix0, self.ypix0 = self.refpix[self.ra_axis], self.refpix[self.dec_axis]
 
             # set x/y scales
-            pix_scales = self.wcs.wcs.cdelt
+            # calling cdelt when cd is found causes a warning
+            if not self.wcs.wcs.has_cd():
+                if hasattr(self.wcs.wcs, 'cdelt'):
+                    pix_scales = self.wcs.wcs.cdelt
+            else:
+                pix_scales = self.wcs.wcs.get_cdelt()
+                if not np.size(pix_scales):
+                    # set default if not found
+                    pix_scales = np.array([1., 1.])
+                    self.wcs.wcs.cdelt = pix_scales
+
             self.xscale = -pix_scales[self.ra_axis] * DEG
             self.yscale = pix_scales[self.dec_axis] * DEG
 
@@ -407,9 +435,42 @@ class Projection(object):
             has_projection = True
             _Projector.__init__(self, ra0 * DEG, dec0 * DEG, has_projection=has_projection)
 
+        def check_angles(self, dec):
+            """Checks that angle is -90 > angle < 90. Adapted from astropy intrenals."""
+            try:
+                _check = dec * u.rad.to(u.deg)
+                if isinstance(_check, ndarray):
+                    with numpy.errstate(invalid='ignore'):
+                        invalid_angles = (numpy.any(_check < -90)
+                                          or numpy.any(_check > 90))
+                    return not invalid_angles
+                elif -90 <= _check <= 90:
+                    return True
+                else:
+                    return False
+            except:
+                return False
+
         def lm(self, ra, dec):
-            coord = SkyCoord(ra=ra * u.rad, dec=dec * u.rad)
-            coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            """ra and dec are in rad units"""
+            if not self.check_angles(dec):
+                raise RuntimeError(f"Angle not -90 deg > angle < 90 deg: {dec * u.rad.to(u.deg)}. Check Units, they may be incorrect.")
+
+            if self.radesys == 'galactic':
+                coord = SkyCoord(l=ra * u.rad, b=dec * u.rad, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+            elif self.radesys == 'geocentricmeanecliptic':
+                coord = SkyCoord(lon=ra * u.rad, lat=dec * u.rad, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+                coord_pixels = np.array([coord_pixels[0], coord_pixels[1]])
+            else:
+                # ICRS, FK4, FK5, etc
+                coord = SkyCoord(ra * u.rad, dec * u.rad, frame=self.radesys)
+                coord = coord.transform_to('icrs')
+                coord_pixels = utils.skycoord_to_pixel(coords=coord, wcs=self.wcs, origin=0, mode='all')
+
             if np.isnan(np.sum(coord_pixels)):
                 l, m = -0.0, 0.0
             else:
@@ -422,6 +483,7 @@ class Projection(object):
             x = self.xpix0 + l / -self.xscale
             y = self.ypix0 + m / self.yscale
             coord = utils.pixel_to_skycoord(xp=x, yp=y, wcs=self.wcs, origin=0, mode='all')
+            coord = coord.transform_to('icrs')
             ra = coord.ra.value
             dec = coord.dec.value
             return ra * DEG, dec * DEG
@@ -493,4 +555,3 @@ class Projection(object):
 
         def offset(self, dra, ddec):
             return sin(dra), sin(ddec)
-
