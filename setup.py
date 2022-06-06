@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-__version__ = "1.7.1"
+__version__ = "1.7.2"
 
 # PyQt 5 has not been added here are. It needs to be installed via apt-get which is a Tigger v1.6.0 requirement.
 requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future', 'python-casacore']
