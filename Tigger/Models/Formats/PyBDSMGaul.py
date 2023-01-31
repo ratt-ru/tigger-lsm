@@ -37,7 +37,7 @@ from Tigger.Models.Formats import dprint, ASCII
 # E_Min PA E_PA DC_Maj E_DC_Maj DC_Min E_DC_Min DC_PA E_DC_PA Isl_Total_flux
 # E_Isl_Total_flux Isl_rms Isl_mean Resid_Isl_rms Resid_Isl_mean S_Code
 
-format_mapping = dict(
+reference_format_mapping = dict(
     Gaus_id="name",
     RA="ra_d", E_RA="ra_err_d", DEC="dec_d", E_DEC="dec_err_d",
     Total_flux="i", E_Total_flux="i_err",
@@ -62,6 +62,7 @@ def load(filename, freq0=None, **kw):
     dprint(1, "importing PyBDSM gaul/srl file", filename)
     format = {}
     extension = filename.split(".")[-1]
+    format_mapping = reference_format_mapping.copy()
     if extension == "srl":
         format_mapping['Source_id'] = format_mapping.pop('Gaus_id')
         id = "Source_id"
