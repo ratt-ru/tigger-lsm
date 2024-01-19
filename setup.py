@@ -6,7 +6,15 @@ from setuptools import setup, find_packages
 __version__ = "1.7.3"
 
 # PyQt 5 has not been added here are. It needs to be installed via apt-get which is a Tigger v1.6.0 requirement.
-requirements = ['astro_kittens', 'numpy', 'scipy', 'astlib', 'astropy', 'future', 'python-casacore']
+requirements = ['astro_kittens', 
+                'numpy', 
+                'scipy', 
+                'astlib<=0.11.10; python_version >="3.8"', 
+                'astlib<=0.11.8; python_version <"3.8"', 
+                'astropy', 
+                'future', 
+                'python-casacore'
+]
 
 scripts = [
     'Tigger/bin/tigger-convert',
