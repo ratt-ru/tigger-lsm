@@ -9,6 +9,11 @@ RUN pip3 install -U pip setuptools wheel
 #######################################
 # Install python 3 meqtrees
 #######################################
+
+WORKDIR /code
+ADD . /code/tigger-lsm
+RUN pip3 install ./tigger-lsm
+
 # add additional Timba dependencies
 RUN docker-apt-install python3-pyqt4 python3-pyqt5
 WORKDIR /src
@@ -41,10 +46,6 @@ RUN cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DENABLE_PYTHON
 RUN make
 RUN make install
 RUN ldconfig
-
-WORKDIR /code
-ADD . /code/tigger-lsm
-RUN pip3 install ./tigger-lsm
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
 # basic install tests
