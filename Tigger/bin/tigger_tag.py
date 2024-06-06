@@ -65,7 +65,7 @@ def transfer_tags(fromlsm, lsm, output, tags, tolerance, tigger):
     model.save(output)
 
 
-if __name__ == '__main__':
+def main():
     import Kittens.utils
 
     _verbosity = Kittens.utils.verbosity(name="convert-model")

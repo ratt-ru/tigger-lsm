@@ -34,6 +34,7 @@ import traceback
 
 import numpy
 import os.path
+import Cattery.Siamese.OMS.Utils as Utils
 
 DEG = math.pi / 180
 
@@ -81,7 +82,7 @@ def rotatelm(l0, m0, rotangle):
     return l, m
 
 
-if __name__ == '__main__':
+def main():
     import Kittens.utils
 
     _verbosity = Kittens.utils.verbosity(name="convert-model")
@@ -660,12 +661,6 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
             REIM = "re", "im"
             REALIMAG = dict(re="real", im="imag")
 
-            # get the Cattery
-            for varname in 'CATTERY_PATH', "MEQTREES_CATTERY_PATH":
-                if varname in os.environ:
-                    sys.path.append(os.environ[varname])
-
-            import Siamese.OMS.Utils as Utils
 
 
             def make_beam_filename(filename_pattern, corr, reim):
@@ -681,7 +676,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
             filename_real = []
             filename_imag = []
             # load beam interpolator
-            import Siamese.OMS.InterpolatedBeams as InterpolatedBeams
+            import Cattery.Siamese.OMS.InterpolatedBeams as InterpolatedBeams
 
             vbs = []
             for icorr, corr in enumerate(CORRS_XY if options.linear_pol else CORRS_RL):

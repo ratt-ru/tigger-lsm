@@ -32,7 +32,7 @@ import sys
 from astropy.io import fits as pyfits
 from past.builtins import cmp
 
-if __name__ == '__main__':
+def main():
 
     import Tigger.Models.Formats
     from Tigger.Models.Formats import ASCII

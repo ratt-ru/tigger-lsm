@@ -13,7 +13,8 @@ requirements = ['astro_kittens',
                 'astlib<=0.11.8; python_version <"3.8"', 
                 'astropy', 
                 'future', 
-                'python-casacore'
+                'python-casacore',
+                'meqtrees-cattery',
 ]
 
 scripts = [

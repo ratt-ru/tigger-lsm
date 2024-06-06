@@ -41,7 +41,7 @@ DEG = math.pi / 180
 
 NATIVE = "Tigger"
 
-if __name__ == '__main__':
+def main():
     import Kittens.utils
 
     _verbosity = Kittens.utils.verbosity(name="convert-model")
