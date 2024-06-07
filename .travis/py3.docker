@@ -1,100 +1,38 @@
-FROM kernsuite/base:6
+FROM kernsuite/base:9
 
 RUN docker-apt-install python3-casacore casacore-dev casacore-data makems casarest \
                        python3-pip git wget cmake libblitz0-dev libqdbm-dev \
                        libfftw3-dev wcslib-dev libcfitsio-dev \
-                       'libcasa-*' liblapack-dev libatlas-base-dev
+                       'libcasa-*' liblapack-dev libatlas-base-dev 2to3
 
-RUN pip3 install -U pip setuptools wheel
+RUN pip install -U pip setuptools wheel
 #######################################
 # Install python 3 meqtrees
 #######################################
 
-WORKDIR /code
-ADD . /code/tigger-lsm
-RUN pip3 install ./tigger-lsm
 
 # add additional Timba dependencies
-RUN docker-apt-install python3-pyqt4 python3-pyqt5
+RUN docker-apt-install meqtrees-timba
 WORKDIR /src
-RUN wget https://codeload.github.com/ska-sa/meqtrees-cattery/tar.gz/refs/tags/v1.7.1 && \
-    tar zxvf v1.7.1 && \
-    rm v1.7.1 
-RUN wget https://codeload.github.com/ska-sa/purr/tar.gz/refs/tags/v1.5.0 && \
-    tar zxvf v1.5.0 && \
-    rm v1.5.0
-RUN wget https://codeload.github.com/ska-sa/owlcat/tar.gz/refs/tags/v1.6.0 && \
-    tar zxvf v1.6.0 && \
-    rm v1.6.0
-RUN wget https://codeload.github.com/ska-sa/kittens/tar.gz/refs/tags/v1.4.3 && \
-    tar zxvf v1.4.3 && \
-    rm v1.4.3
 RUN wget https://codeload.github.com/ska-sa/pyxis/tar.gz/refs/tags/v1.7.1 && \
     tar zxvf v1.7.1 && \
     rm v1.7.1
 
-RUN pip3 install ./meqtrees-cattery-1.7.1 ./purr-1.5.0 ./owlcat-1.6.0 ./kittens-1.4.3
-RUN pip3 install -e ./pyxis-1.7.1
+WORKDIR /code
+ADD . /code/tigger-lsm
+RUN pip install ./tigger-lsm
 
-WORKDIR /src
-RUN wget https://codeload.github.com/ska-sa/meqtrees-timba/tar.gz/refs/tags/v1.8.0 && \
-    tar zxvf v1.8.0 && \
-    rm v1.8.0
-RUN mkdir /src/meqtrees-timba-1.8.0/build
-WORKDIR /src/meqtrees-timba-1.8.0/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DENABLE_PYTHON_3=ON ..
-RUN make
-RUN make install
-RUN ldconfig
-
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
 # basic install tests
+RUN pip install pynose owlcat
 RUN flag-ms.py --help
 RUN meqtree-pipeliner.py --help
 RUN pyxis --help
 
 #######################################
-# run oleg's new tests
-#######################################
-ENV GITHUB_WORKSPACE=/code/tigger-lsm
-# Test conversion to .txt models
-RUN tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.txt -f \
-    --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
-RUN tigger-convert $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/output.recentred.txt -f --center 85.5deg,49.9deg --rename \
-    --output-format "name ra_d dec_d i q u v i q u v spi rm emaj_s emin_s pa_d freq0"
-RUN echo "Checking reference LSM"
-RUN diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.reference.txt /tmp/output.txt
-RUN echo "Checking recentred reference LSM"
-RUN diff $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.recentred.reference.txt /tmp/output.recentred.txt
-
-#Test reverse conversion to .lsm.html models
-RUN tigger-convert /tmp/output.txt /tmp/output.lsm.html -f
-
-#Test .gaul conversions
-RUN tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.lsm.html -f 
-RUN tigger-convert $GITHUB_WORKSPACE/test/deep4.gaul /tmp/deep4.txt -f --output-format "name ra_d dec_d i q u v spi rm emaj_s emin_s pa_d freq0"
-RUN diff $GITHUB_WORKSPACE/test/deep4.reference.txt /tmp/deep4.txt
-
-# Test .AIPSCC conversions
-RUN gunzip <$GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.fits.gz >/tmp/3C147-L-A-CLEAN.fits
-RUN tigger-convert /tmp/3C147-L-A-CLEAN.fits /tmp/3C147-L-A-CLEAN.fits.lsm.html -f
-RUN tigger-convert /tmp/3C147-L-A-CLEAN.fits.lsm.html /tmp/3C147-L-A-CLEAN.txt -f --output-format "name ra_d dec_d i q u v"
-RUN zdiff $GITHUB_WORKSPACE/test/3C147-L-A-CLEAN.txt.gz /tmp/3C147-L-A-CLEAN.txt
-
-# Testing tigger-restore and tigger-make-brick
-RUN cp $GITHUB_WORKSPACE/test/3C147tmp.fits /tmp
-RUN tigger-make-brick $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/3C147tmp.fits 
-RUN tigger-restore -f $GITHUB_WORKSPACE/test/3C147tmp.fits $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html /tmp/restored.fits
-
-#Test tigger-tag
-RUN tigger-tag $GITHUB_WORKSPACE/test/3C147-HI6.refmodel.lsm.html 'r<0.5d' inner=1 -o /tmp/tmp.lsm.html -f
-
-#######################################
 # end to end test
 #######################################
-RUN pip3 install nose
 WORKDIR /src/pyxis-1.7.1/Pyxis/recipes/meqtrees-batch-test
-RUN python3 -m "nose"
+RUN pynose
 
 ENTRYPOINT ["meqtree-pipeliner.py"]
 CMD ["--help"]
