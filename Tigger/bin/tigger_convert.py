@@ -461,7 +461,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                 # recompute 'r' attribute (unless --center is in effect, in which case it's going to be done anyway below)
                 if options.refresh_r:
                     for src in model2.sources:
-                        src.setAttribute('r', Coordinates.angular_dist_pos_angle(ra0, dec0, *model.fieldCenter())[0])
+                        src.setAttribute('r', Coordinates.angular_dist_pos_angle(src.pos.ra, src.pos.dec, *model.fieldCenter())[0])
             print("Appended %d sources from %s (%s)" % (len(model2.sources), filename, append_doc))
 
     # apply center, if specified
@@ -515,8 +515,8 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                 tags = ff[3:] if len(ff) > 3 else []
             except:
                 parser.error("Invalid --add-brick setting %s" % brickspec)
-            if [src.name for src in sources if src.name == name]:
-                print("Error: model already contains a source named '%s'" % name)
+            if [src.name for src in sources if src.name == srcname]:
+                print("Error: model already contains a source named '%s'" % srcname)
             # add brick
             from astropy.io import fits as pyfits
             from astLib.astWCS import WCS

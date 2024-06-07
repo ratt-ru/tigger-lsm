@@ -300,7 +300,7 @@ Saves the result to an LSM file given by -o/--output.
             # else some other type is specified -- use it to convert the value
             elif typename:
                 try:
-                    newval = getattr(__builtin__, typename)(value)
+                    newval = getattr(globals()["__builtin__"], typename)(value)
                 except:
                     print("Can't parse \"%s\" as a value of type %s" % (value, typename))
                     sys.exit(2)

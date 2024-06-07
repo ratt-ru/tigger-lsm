@@ -29,6 +29,15 @@ tigger-tag = "Tigger.bin.tigger_tag:main"
 tigger-restore = "Tigger.bin.tigger_restore:main"
 tigger-make-brick = "Tigger.bin.tigger_make_brick:main"
 
+
+[tool.poetry.group.tests]
+optional = true
+[tool.poetry.group.tests.dependencies]
+pytest = "^7.1.3"
+flake8 = "*"
+
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

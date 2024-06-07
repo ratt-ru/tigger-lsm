@@ -196,7 +196,7 @@ an output image is not specified, makes a name for it automatically.""")
             if not isinstance(dum, float):
                 raise TypeError("Primary beam expression does not evaluate to a float")
         except Exception as exc:
-            print("Bad primary beam expression '%s': %s" % (pb, str(exc)))
+            print("Bad primary beam expression '%s': %s" % (options.pb, str(exc)))
             sys.exit(1)
         if not freq:
             print("Model must contain a reference requency, or else specify one with --freq.")
