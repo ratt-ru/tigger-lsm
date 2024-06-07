@@ -172,13 +172,15 @@ Saves the result to an LSM file given by -o/--output.
 
     # This is where we accumulate the result of selection arguments, until we hit the first tagging argument.
     # Initially None, meaning no explicit selection
+    global selected_ids
     selected_ids = None
 
     # This is where we put the selection when we hit the first tagging argument.
+    global selection
     selection = None
 
     # this is set to true when the selection is listed
-    listed = False
+    global listed
     # set to true when the model is modified
     modified = False
 
