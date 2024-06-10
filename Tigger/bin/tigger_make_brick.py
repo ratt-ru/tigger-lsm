@@ -41,7 +41,7 @@ DEG = math.pi / 180
 
 NATIVE = "Tigger"
 
-if __name__ == '__main__':
+def main():
     import Kittens.utils
 
     _verbosity = Kittens.utils.verbosity(name="convert-model")
@@ -221,7 +221,7 @@ while the brick itself will be added (as a FITS image component), and a new sky 
                 src.flux.I = max_flux
                 src.shape.ex, src.shape.ey = sx, sy
                 src.shape.nx, src.shape.ny = nx, ny
-                src.shape.pad = pad
+                src.shape.pad = options.pad
                 break
         # not contained, make new source object
         else:

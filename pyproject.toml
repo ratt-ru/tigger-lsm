@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "astro-tigger-lsm"
+version = "1.7.4"
+description = "Python libraries and command-line tools for manipulating Tigger LSMs"
+authors = ["Oleg Smirnov <osmirnov@gmail.com>"]
+readme = "README.rst"
+packages = [
+    {include = "Tigger"},
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+astro-kittens = "^1.4.6"
+numpy = "*"
+scipy = "*"
+astlib = [
+    { version = "<=0.11.10", python = ">=3.8"}, 
+    { version = "<=0.11.8", python = "<=3.8"}
+]
+astropy = "*"
+future = "*"
+python-casacore = "*"
+meqtrees-cattery = "^1.7.9"
+
+[tool.poetry.scripts]
+tigger-convert = "Tigger.bin.tigger_convert:main"
+tigger-tag = "Tigger.bin.tigger_tag:main"
+tigger-restore = "Tigger.bin.tigger_restore:main"
+tigger-make-brick = "Tigger.bin.tigger_make_brick:main"
+
+
+[tool.poetry.group.tests]
+optional = true
+[tool.poetry.group.tests.dependencies]
+pytest = "^7.1.3"
+flake8 = "*"
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
