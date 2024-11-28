@@ -257,7 +257,7 @@ Saves the result to an LSM file given by -o/--output.
     for arg in rem_args[1:]:
         # Match either the SELTAG<>SELVAL, or the TAG=[TYPE:]VALUE, or the [+!/]TAG forms
         # If none match, assume the NAME form
-        mselcomp = re.match("^(?i)([^=<>!.]+)(%s)([^dms]+)([dms])?" % "|".join(
+        mselcomp = re.match("(?i)^([^=<>!.]+)(%s)([^dms]+)([dms])?" % "|".join(
             [key.replace('.', '\.') for key in list(select_predicates.keys())]), arg)
         mseltag = re.match("=(.+)$", arg)
         mset = re.match("^(.+)=((bool|int|str|float|complex):)?(.+)$", arg)
