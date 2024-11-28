@@ -25,7 +25,10 @@ astlib = [
     { version = "<=0.11.10", python = ">=3.8, <3.12"},
     { version = "<=0.11.8", python = "<3.8"}
 ]
-astropy = "*"
+astropy = [
+    { version = ">=6.1.0", python = ">=3.12"},
+    { version = "<6.1.0", python = ">=3.8, <3.12"}
+]
 future = "*"
 python-casacore = "*"
 meqtrees-cattery = "^1.7.9"
