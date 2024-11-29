@@ -5,7 +5,7 @@ RUN docker-apt-install python3-casacore casacore-dev casacore-data makems casare
                        libfftw3-dev wcslib-dev libcfitsio-dev \
                        'libcasa-*' liblapack-dev libatlas-base-dev 2to3
 
-RUN pip install -U pip setuptools wheel
+RUN pip install -U pip 'setuptools[core]' wheel
 #######################################
 # Install python 3 meqtrees
 #######################################
