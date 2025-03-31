@@ -528,7 +528,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
             # Get reference pixel coordinates
             # wcs.getCentreWCSCoords() doesn't work, as that gives us the middle of the image
             # So scan the header to get the CRPIX values
-            ra0 = dec0 = 1
+            ra0 = dec0 = 0
             for iaxis in range(hdr['NAXIS']):
                 axs = str(iaxis + 1)
                 name = hdr.get('CTYPE' + axs, axs).upper()
@@ -540,6 +540,9 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
             ra0, dec0 = wcs.pix2wcs(ra0, dec0)
             ra0 *= DEG
             dec0 *= DEG
+            # get NX, NY
+            nx, ny = input_hdu.data.shape[-1:-3:-1]
+            # figure out half-size
             sx, sy = wcs.getHalfSizeDeg()
             sx *= DEG
             sy *= DEG
