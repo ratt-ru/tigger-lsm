@@ -31,11 +31,11 @@ jobs:
     #     installer-parallel: false
     - name: Install package
       run: |
-          pip install -e $GITHUB_WORKPACE
+          pip install -e .
           pip install pytest flake8
     - name: Lint with flake8
       run: |
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run tests
       run: |
-        pytest $GITHUB_WORKSPACE/test
+        pytest test
