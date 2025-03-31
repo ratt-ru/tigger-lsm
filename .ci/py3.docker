@@ -13,7 +13,7 @@ RUN pip install -U pip 'setuptools[core]' wheel
 
 # add additional Timba dependencies
 # note these modules are currently compiled with Numpy 1.x, need to enforce the LTS numpy version throughout
-ENV SYSNPVERSION=$(python3 -c "import numpy as np; print(np.__version__)")
+ENV SYSNPVERSION 1.21.5
 RUN docker-apt-install meqtrees-timba
 WORKDIR /src
 RUN wget https://codeload.github.com/ska-sa/pyxis/tar.gz/refs/tags/v1.7.1 && \
