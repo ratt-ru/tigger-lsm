@@ -10,7 +10,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 astro-kittens = "^1.4.6"
 numpy = "*"
 scipy = "*"
