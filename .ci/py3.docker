@@ -12,6 +12,8 @@ RUN pip install -U pip 'setuptools[core]' wheel
 
 
 # add additional Timba dependencies
+# note these modules are currently compiled with Numpy 1.x, need to enforce the LTS numpy version throughout
+ENV SYSNPVERSION=$(python3 -c "import numpy as np; print(np.__version__)")
 RUN docker-apt-install meqtrees-timba
 WORKDIR /src
 RUN wget https://codeload.github.com/ska-sa/pyxis/tar.gz/refs/tags/v1.7.1 && \
@@ -20,7 +22,7 @@ RUN wget https://codeload.github.com/ska-sa/pyxis/tar.gz/refs/tags/v1.7.1 && \
 
 WORKDIR /code
 ADD . /code/tigger-lsm
-RUN pip install ./tigger-lsm
+RUN pip install ./tigger-lsm numpy==$SYSNPVERSION
 
 # basic install tests
 RUN pip install pynose owlcat
