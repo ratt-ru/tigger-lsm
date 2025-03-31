@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "astro-tigger-lsm"
-version = "1.7.4"
+version = "1.8.0"
 description = "Python libraries and command-line tools for manipulating Tigger LSMs"
 authors = ["Oleg Smirnov <osmirnov@gmail.com>"]
 readme = "README.rst"
