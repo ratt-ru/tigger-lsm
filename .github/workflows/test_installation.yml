@@ -40,4 +40,4 @@ jobs:
         poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Run tests
       run: |
-        pytest $GITHUB_WORKSPACE/test
+        poetry run pytest $GITHUB_WORKSPACE/test
