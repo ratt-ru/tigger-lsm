@@ -83,6 +83,12 @@ def test_convert():
     assert retcode == 0
     retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits 3C147-HI6.refmodel.lsm.html {tmpdir}/restored.fits""")
     assert retcode == 0
+    retcode, _ = run(f"""tigger-make-brick 3C147-HI6.refmodel.lsm.html {tmpdir}/3C147tmp.fits {tmpdir}/brickmodel.lsm.html -f""")
+    assert retcode == 0
+    retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits 3C147-HI6.refmodel.lsm.html {tmpdir}/restored1.fits""")
+    assert retcode == 0
+    retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits {tmpdir}/brickmodel.lsm.html {tmpdir}/restored2.fits""")
+    assert retcode == 0
 
     print("Test tigger-tag")
     retcode, _ = run(f"""tigger-tag 3C147-HI6.refmodel.lsm.html 'r<0.5d' inner=1 -o {tmpdir}/tmp.lsm.html -f """)
