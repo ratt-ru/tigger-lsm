@@ -210,17 +210,12 @@ while the brick itself will be added (as a FITS image component), and a new sky 
         dec0 *= DEG
         # get half-size of image
         nx, ny = input_hdu.data.shape[-1:-3:-1]
-        refpix0 = refpix.copy()
-        refpix1 = refpix.copy()
-        refpix0[ra_axis], refpix0[dec_axis] = 0, 0
-        refpix1[ra_axis], refpix1[dec_axis] = nx, ny
-        refsky0 = wcs.wcs_pix2world(np.array(refpix0).reshape(1, naxis), 0)[0]
-        refsky1 = wcs.wcs_pix2world(np.array(refpix1).reshape(1, naxis), 0)[0]
-        ra0, dec0 = refsky0[ra_axis], refsky0[dec_axis]
-        ra1, dec1 = refsky1[ra_axis], refsky1[dec_axis]
-        sx, sy = abs(ra1 - ra0)/2, abs(dec1 - dec0) / 2
-        sx *= np.cos((dec1 + dec0)/2 * DEG)
+        # get half-size of image
+        sx = nx/2 * abs(hdr[f"CDELT{ra_axis+1}"])
+        sy = nx/2 * abs(hdr[f"CDELT{dec_axis+1}"])
         print("Image half-size is %f,%f deg" % (sx, sy))
+        sx *= DEG
+        sy *= DEG
         # check if this image is already contained in the model
         for src in model.sources:
             if isinstance(getattr(src, 'shape', None), ModelClasses.FITSImage) and os.path.samefile(src.shape.filename,
