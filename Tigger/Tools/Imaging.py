@@ -31,7 +31,6 @@ import math
 import Kittens.utils
 # init debug printing
 import Kittens.utils
-import astLib.astWCS
 import numpy as np
 from astropy.io import fits as pyfits
 from scipy.ndimage.filters import convolve
@@ -263,15 +262,19 @@ class ImageResampler(object):
         # convert tl,tm to to source coordinates
         
         # find the overlap region first, to keeps the number of coordinate conversions to a minimum
-        footprint1 = sproj.wcs.calc_footprint()
-        footprint2 = tproj.wcs.calc_footprint()
-        
-        ra1_min, ra1_max = np.min(footprint1[:, 0]), np.max(footprint1[:, 0])
-        dec1_min, dec1_max = np.min(footprint1[:, 1]), np.max(footprint1[:, 1])
+        swcs = sproj.wcs
+        twcs = tproj.wcs
+        while swcs.pixel_n_dim > 2:
+            swcs = swcs.dropaxis(-1) 
+        while twcs.pixel_n_dim > 2:
+            twcs = twcs.dropaxis(-1) 
 
-        ra2_min, ra2_max = np.min(footprint2[:, 0]), np.max(footprint2[:, 0])
-        dec2_min, dec2_max = np.min(footprint2[:, 1]), np.max(footprint2[:, 1])
+        footprint1 = swcs.calc_footprint()
+        footprint2 = twcs.wcs_world2pix(footprint1, 0)
         
+        tx1, tx2 = np.min(footprint2[:, 0]), np.max(footprint2[:, 0])
+        ty1, ty2 = np.min(footprint2[:, 1]), np.max(footprint2[:, 1])
+
         # no overlap? stop then
         if tx1 > tl[-1] or tx2 < tl[0] or ty1 > tm[-1] or ty2 < tm[0]:
             self._target_slice = None, None

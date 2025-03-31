@@ -93,11 +93,11 @@ def test_convert(tmpdir: str = None):
 
     print("Testing tigger-convert add-brick")
     retcode, _ = run(f"""tigger-convert 3C147-HI6.refmodel.lsm.html {tmpdir}/add-brick.lsm.html -f """
-        """ --add-brick BRICK:3C147tmp.fits """)
+        """ --add-brick BRICK:3C147tmp-zoom.fits """)
     assert retcode == 0
 
     print("Testing tigger-restore")
-    retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits {tmpdir}/brickmodel.lsm.html {tmpdir}/restored2.fits""")
+    retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits {tmpdir}/add-brick.lsm.html {tmpdir}/restored2.fits""")
     assert retcode == 0
     retcode, _ = run(f"""zdiff {tmpdir}/restored2.fits restored2-reference.fits.gz""")
     assert retcode == 0

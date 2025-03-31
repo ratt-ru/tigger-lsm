@@ -67,7 +67,6 @@ from astropy.wcs import WCS, FITSFixedWarning
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.wcs import utils
-import PyWCSTools.wcs
 
 startup_dprint(1, "imported WCS")
 warnings.simplefilter('ignore', category=FITSFixedWarning)
@@ -314,10 +313,14 @@ class Projection(object):
                 ### try a faster implementation -- oh well, only a bit faster, ~95 seconds for the same
                 ### can also replace list comprehension with map(), but that doesn't improve things.
                 ### Note also that the final array constructor takes ~10 secs!
-                radec = numpy.array(
-                    [PyWCSTools.wcs.pix2wcs(self.wcs.WCSStructure, x, y) for x, y in zip(l + 1, m + 1)])
-                ra = radec[..., 0]
-                dec = radec[..., 1]
+
+                ### replacing this with new astropy wcs calls 
+                xyarr = numpy.array([self.refsky]*len(l))
+                xyarr[:, self.ra_axis] = l
+                xyarr[:, self.dec_axis] = m
+                radec = self.wcs.wcs_pix2world(xyarr, 0)
+                ra = radec[:, self.ra_axis]
+                dec = radec[:, self.dec_axis]
             return ra * DEG, dec * DEG
 
         def offset(self, dra, ddec):
