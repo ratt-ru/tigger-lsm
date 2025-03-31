@@ -1,4 +1,5 @@
-import os, re, subprocess, pytest
+#!/usr/bin/env python
+import sys, re, subprocess, pytest
 from tempfile import TemporaryDirectory
 
 
@@ -29,10 +30,11 @@ def verify_output(output, *regexes):
         return False
     return True
 
-def test_convert():
-    tmpdir_obj = TemporaryDirectory()
-    tmpdir = tmpdir_obj.name
-    print(f"temporary output dir is {tmpdir}")
+def test_convert(tmpdir: str = None):
+    if tmpdir is None:
+        tmpdir_obj = TemporaryDirectory()
+        tmpdir = tmpdir_obj.name
+        print(f"temporary output dir is {tmpdir}")
 
     print("Test conversion")
 
@@ -54,7 +56,6 @@ def test_convert():
     assert retcode == 0
 
     print("Test reverse conversion to .lsm.html models")
-
     retcode, _ = run(f"""tigger-convert {tmpdir}/output.txt {tmpdir}/output.lsm.html -f""")
     assert retcode == 0
 
@@ -73,7 +74,7 @@ def test_convert():
     assert retcode == 0
     retcode, _ = run(f"""tigger-convert {tmpdir}/3C147-L-A-CLEAN.fits.lsm.html {tmpdir}/3C147-L-A-CLEAN.txt -f --output-format "name ra_d dec_d i q u v" """)
     assert retcode == 0
-    retcode, _ = run(f""" zdiff 3C147-L-A-CLEAN.txt.gz {tmpdir}/3C147-L-A-CLEAN.txt""")
+    retcode, _ = run(f"""zdiff 3C147-L-A-CLEAN.txt.gz {tmpdir}/3C147-L-A-CLEAN.txt""")
     assert retcode == 0
 
     print("Testing tigger-restore and tigger-make-brick")
@@ -87,7 +88,18 @@ def test_convert():
     assert retcode == 0
     retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits 3C147-HI6.refmodel.lsm.html {tmpdir}/restored1.fits""")
     assert retcode == 0
+    retcode, _ = run(f"""zdiff {tmpdir}/restored1.fits restored1-reference.fits.gz""")
+    assert retcode == 0
+
+    print("Testing tigger-convert add-brick")
+    retcode, _ = run(f"""tigger-convert 3C147-HI6.refmodel.lsm.html {tmpdir}/add-brick.lsm.html -f """
+        """ --add-brick BRICK:3C147tmp.fits """)
+    assert retcode == 0
+
+    print("Testing tigger-restore")
     retcode, _ = run(f"""tigger-restore -f 3C147tmp.fits {tmpdir}/brickmodel.lsm.html {tmpdir}/restored2.fits""")
+    assert retcode == 0
+    retcode, _ = run(f"""zdiff {tmpdir}/restored2.fits restored2-reference.fits.gz""")
     assert retcode == 0
 
     print("Test tigger-tag")
@@ -98,3 +110,14 @@ def test_convert():
     retcode, _ = run(f"""tigger-convert 3C147-HI6.refmodel.lsm.html {tmpdir}/3C147-HI6.refmodel.lsm.reg -f """)
     assert retcode == 0
 
+    return tmpdir
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        tmpdir = sys.argv[1]
+    else:
+        tmpdir = None
+
+    tmpdir = test_convert(tmpdir)
+
+    print(f"Output directory was {tmpdir}")

@@ -15,12 +15,12 @@ from pypi or from source
 ------------------------
 
 requirements:
-    * Assorted python packages: astropy, numpy, scipy, astLib, python-casacore, future. With the exception of astLib, these are already present in most Linux distros.  astLib may be downloaded here: http://astlib.sourceforge.net/
+    * Assorted python packages: astropy, numpy, scipy, python-casacore, future. These are already present in most Linux distros.  
     * Purr/Kittens. Available from pip as astro-kittens. Else, install the purr package from a MeqTrees binary distribution (see http://www.astron.nl/meqwiki/Downloading). Alternatively, check it out from svn (see below), and make sure the parent of the Kittens directory is in your PYTHONPATH.
 
 To obtain on ubuntu you can run::
 
-  $ sudo apt-get install python-kittens python-pyfits python-astlib python-scipy python-numpy
+  $ sudo apt-get install python-kittens python-pyfits python-scipy python-numpy astropy
 
 now from pip::
 
