@@ -74,7 +74,7 @@ def test_convert(tmpdir: str = None):
     assert retcode == 0
     retcode, _ = run(f"""tigger-convert {tmpdir}/3C147-L-A-CLEAN.fits.lsm.html {tmpdir}/3C147-L-A-CLEAN.txt -f --output-format "name ra_d dec_d i q u v" """)
     assert retcode == 0
-    retcode, _ = run(f"""zdiff 3C147-L-A-CLEAN.txt.gz {tmpdir}/3C147-L-A-CLEAN.txt""")
+    retcode, _ = run(f""" zdiff 3C147-L-A-CLEAN.txt.gz {tmpdir}/3C147-L-A-CLEAN.txt""")
     assert retcode == 0
 
     print("Testing tigger-restore and tigger-make-brick")
@@ -110,13 +110,13 @@ def test_convert(tmpdir: str = None):
     retcode, _ = run(f"""tigger-convert 3C147-HI6.refmodel.lsm.html {tmpdir}/3C147-HI6.refmodel.lsm.reg -f """)
     assert retcode == 0
 
-    return tmpdir
+    return None
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         tmpdir = sys.argv[1]
     else:
-        tmpdir = None
+        tmpdir = "/tmp"
 
     tmpdir = test_convert(tmpdir)
 
