@@ -161,6 +161,7 @@ while the brick itself will be added (as a FITS image component), and a new sky 
         print("Adding source(s) to FITS image")
 
     wcs, refpix, refsky, ra_axis, dec_axis = get_wcs_info(hdr)
+    naxis = hdr["NAXIS"]
 
     if ra_axis is None or dec_axis is None:
         print("Can't find RA and/or DEC axis in this FITS image")
@@ -176,7 +177,7 @@ while the brick itself will be added (as a FITS image component), and a new sky 
     if options.x_offset or options.y_offset:
         refpix[ra_axis] = ra0pix = ra0pix + options.x_offset
         refpix[dec_axis] = dec0pix = dec0pix + options.y_offset
-        refsky = wcs.wcs_pix2world([refpix], 0)[0]
+        refsky = wcs.wcs_pix2world(np.array(refpix).reshape(1, naxis), 0)[0]
         ra0, dec0 = refsky[ra_axis], refsky[dec_axis]
         print("Applying x/y offset moves this to %f,%f deg" % (ra0, dec0))
         hdr["CRVAL%d" % (ra_axis+1)] = ra0
@@ -207,10 +208,14 @@ while the brick itself will be added (as a FITS image component), and a new sky 
         max_flux = float(input_hdu.data.max())
         ra0 *= DEG
         dec0 *= DEG
-        sx, sy = wcs.getHalfSizeDeg()
+        # get half-size of image
+        nx, ny = input_hdu.data.shape[-1:-3:-1]
+        # get half-size of image
+        sx = nx/2 * abs(hdr[f"CDELT{ra_axis+1}"])
+        sy = nx/2 * abs(hdr[f"CDELT{dec_axis+1}"])
+        print("Image half-size is %f,%f deg" % (sx, sy))
         sx *= DEG
         sy *= DEG
-        nx, ny = input_hdu.data.shape[-1:-3:-1]
         # check if this image is already contained in the model
         for src in model.sources:
             if isinstance(getattr(src, 'shape', None), ModelClasses.FITSImage) and os.path.samefile(src.shape.filename,

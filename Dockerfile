@@ -5,13 +5,11 @@ RUN docker-apt-install \
     python-scipy \
     python-astropy \
     python-astro-kittens \
-    python-astlib \
     python-pip \
     python3-setuptools \
     python3-numpy \
     python3-scipy \
     python3-astropy \
-    python3-astlib \
     python3-pip
 RUN docker-apt-install git
 ADD . /code

@@ -31,8 +31,7 @@ import math
 import Kittens.utils
 # init debug printing
 import Kittens.utils
-import astLib.astWCS
-import numpy
+import numpy as np
 from astropy.io import fits as pyfits
 from scipy.ndimage.filters import convolve
 from scipy.ndimage.interpolation import map_coordinates
@@ -77,10 +76,10 @@ def fitPsf(filename, cropsize=None):
     # if size not specified, then auto-crop by looking for the first negative value starting from the center
     # this will break on very extended diagonal PSFs, but that's a pathological case
     else:
-        ix = numpy.where(psf[:, ny // 2] < 0)[0]
+        ix = np.where(psf[:, ny // 2] < 0)[0]
         ix0 = max(ix[ix < nx // 2])
         ix1 = min(ix[ix > nx // 2])
-        iy = numpy.where(psf[nx // 2, :] < 0)[0]
+        iy = np.where(psf[nx // 2, :] < 0)[0]
         iy0 = max(iy[iy < ny // 2])
         iy1 = min(iy[iy > ny // 2])
         print(ix0, ix1, iy0, iy1)
@@ -202,7 +201,7 @@ def getImageCube(fitshdu, filename="", extra_axes=None):
             crval = hdr.get('CRVAL' + axs, 0)
             cdelt = hdr.get('CDELT' + axs, 1)
             crpix = hdr.get('CRPIX' + axs, 1) - 1
-            values = list(map(int, list(crval + (numpy.arange(data.shape[iax]) - crpix) * cdelt)))
+            values = list(map(int, list(crval + (np.arange(data.shape[iax]) - crpix) * cdelt)))
             stokes_names = [(FITSHeaders.StokesNames[i]
                              if i > 0 and i < len(FITSHeaders.StokesNames) else "%d" % i) for i in values]
         else:
@@ -261,9 +260,21 @@ class ImageResampler(object):
         tl,tm is a (sorted, ascending) list of l,m coordinates in the target image
         """
         # convert tl,tm to to source coordinates
+        
         # find the overlap region first, to keeps the number of coordinate conversions to a minimum
-        overlap = astLib.astWCS.findWCSOverlap(sproj.wcs, tproj.wcs)
-        tx2, tx1, ty1, ty2 = overlap['wcs2Pix']
+        swcs = sproj.wcs
+        twcs = tproj.wcs
+        while swcs.pixel_n_dim > 2:
+            swcs = swcs.dropaxis(-1) 
+        while twcs.pixel_n_dim > 2:
+            twcs = twcs.dropaxis(-1) 
+
+        footprint1 = swcs.calc_footprint()
+        footprint2 = twcs.wcs_world2pix(footprint1, 0)
+        
+        tx1, tx2 = np.min(footprint2[:, 0]), np.max(footprint2[:, 0])
+        ty1, ty2 = np.min(footprint2[:, 1]), np.max(footprint2[:, 1])
+
         # no overlap? stop then
         if tx1 > tl[-1] or tx2 < tl[0] or ty1 > tm[-1] or ty2 < tm[0]:
             self._target_slice = None, None
@@ -278,9 +289,9 @@ class ImageResampler(object):
 
         #### The code below works but can be very slow  (~minutes) when doing large images, because of WCS
         ## make target lm matrix
-        # tmat = numpy.zeros((2,len(tl),len(tm)))
-        # tmat[0,...] = tl[:,numpy.newaxis]
-        # tmat[1,...] = tm[numpy.newaxis,:]
+        # tmat = np.zeros((2,len(tl),len(tm)))
+        # tmat[0,...] = tl[:,np.newaxis]
+        # tmat[1,...] = tm[np.newaxis,:]
         ## convert this to radec. Go through list since that's what Projection expects
         # dprint(4,"converting %d target l/m pixel coordinates to radec"%(len(tl)*len(tm)))
         # ra,dec = tproj.radec(tmat[0,...].ravel(),tmat[1,...].ravel())
@@ -298,21 +309,21 @@ class ImageResampler(object):
         t1x = sproj.lm(*tproj.radec(tl[-1], tm[0]))
         t1y = sproj.lm(*tproj.radec(tl[0], tm[-1]))
 
-        tmat = numpy.zeros((2, len(tl), len(tm)))
+        tmat = np.zeros((2, len(tl), len(tm)))
         tlnorm = (tl - tl[0]) / (tl[-1] - tl[0])
         tmnorm = (tm - tm[0]) / (tm[-1] - tm[0])
-        tmat[0, ...] = t00[0] + (tlnorm * (t1x[0] - t00[0]))[:, numpy.newaxis] + (tmnorm * (t1y[0] - t00[0]))[
-                                                                                 numpy.newaxis, :]
-        tmat[1, ...] = t00[1] + (tmnorm * (t1y[1] - t00[1]))[numpy.newaxis, :] + (tlnorm * (t1x[1] - t00[1]))[:,
-                                                                                 numpy.newaxis]
+        tmat[0, ...] = t00[0] + (tlnorm * (t1x[0] - t00[0]))[:, np.newaxis] + (tmnorm * (t1y[0] - t00[0]))[
+                                                                                 np.newaxis, :]
+        tmat[1, ...] = t00[1] + (tmnorm * (t1y[1] - t00[1]))[np.newaxis, :] + (tlnorm * (t1x[1] - t00[1]))[:,
+                                                                                 np.newaxis]
 
         dprint(4, "setting up slices")
         # ok, now find pixels in tmat that are within the source image extent
         tmask = (sl[0] <= tmat[0, ...]) & (tmat[0, ...] <= sl[-1]) & (sm[0] <= tmat[1, ...]) & (tmat[1, ...] <= sm[-1])
         # find extents along target's l and m axis
         # tmask_l/m is true for each target column/row that has pixels within the source image
-        tmask_l = numpy.where(tmask.sum(1) > 0)[0]
-        tmask_m = numpy.where(tmask.sum(0) > 0)[0]
+        tmask_l = np.where(tmask.sum(1) > 0)[0]
+        tmask_m = np.where(tmask.sum(0) > 0)[0]
         # check if there's no overlap at all -- return then
         if not len(tmask_l) or not len(tmask_m):
             self._target_slice = None, None
@@ -356,14 +367,14 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
     ny = data.shape[1]
     dprintf(1, "Read image of shape %s\n", data.shape)
 
-    # Now we make "indexer" tuples. These use the numpy.newarray index to turn elementary vectors into
+    # Now we make "indexer" tuples. These use the np.newarray index to turn elementary vectors into
     # full arrays of the same number of dimensions as 'data' (data can be 2-, 3- or 4-dimensional, so we need
     # a general solution.)
     # For e.g. a nfreq x nstokes x ny x nx array, the following objects are created:
     #   x_indexer    turns n-vector vx into a _,_,_,n array
     #   y_indexer    turns m-vector vy into a _,_,m,_ array
     #   stokes_indexer turns the stokes vector into a _,nst,_,_ array
-    # ...where "_" is numpy.newaxis.
+    # ...where "_" is np.newaxis.
     # The happy result of all this is that we can add a Gaussian into the data array at i1:i2,j1:j2 as follows:
     #  1. form up vectors of world coordinates (vx,vy) corresponding to pixel coordinates i1:i2 and j1:j2
     #  2. form up vector of Stokes parameters
@@ -373,7 +384,7 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
 
     # This is a helper function, returns an naxis-sized tuple, with slice(None) in the Nth
     # position, and elem_index elsewhere.
-    def make_axis_indexer(n, elem_index=numpy.newaxis):
+    def make_axis_indexer(n, elem_index=np.newaxis):
         indexer = [elem_index] * naxis
         indexer[n] = slice(None)
         return tuple(indexer)
@@ -382,7 +393,7 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
     y_indexer = make_axis_indexer(1)
     # figure out stokes
     nstokes = len(stokes)
-    stokes_vec = numpy.zeros((nstokes,))
+    stokes_vec = np.zeros((nstokes,))
     stokes_indexer = make_axis_indexer(2)
     dprint(2, "Stokes are", stokes)
     dprint(2, "Stokes indexing vector is", stokes_indexer)
@@ -458,13 +469,13 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
                 if i1 >= i2 or j1 >= j2:
                     continue
                 # now we convert pixel indices within the box into world coordinates, relative to source position
-                xi = (numpy.arange(i1, i2) - xsrc) * proj.xscale
-                yj = (numpy.arange(j1, j2) - ysrc) * proj.yscale
+                xi = (np.arange(i1, i2) - xsrc) * proj.xscale
+                yj = (np.arange(j1, j2) - ysrc) * proj.yscale
                 # work out rotated coordinates
                 xi1 = (xi * cos_pa)[x_indexer] - (yj * sin_pa)[y_indexer]
                 yj1 = (xi * sin_pa)[x_indexer] + (yj * cos_pa)[y_indexer]
                 # evaluate gaussian at these, scale up by stokes vector
-                gg = stokes_vec[stokes_indexer] * numpy.exp(-((xi1 / ex) ** 2 + (yj1 / ey) ** 2) / 2.)
+                gg = stokes_vec[stokes_indexer] * np.exp(-((xi1 / ex) ** 2 + (yj1 / ey) ** 2) / 2.)
                 # add into data
                 data[i1:i2, j1:j2, ...] += gg
             # else gmaj=0: use delta functions
@@ -474,8 +485,8 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
                 # skip sources outside image
                 if xsrc < 0 or xsrc >= nx or ysrc < 0 or ysrc >= ny:
                     continue
-                xdum = numpy.array([1])
-                ydum = numpy.array([1])
+                xdum = np.array([1])
+                ydum = np.array([1])
                 data[xsrc:xsrc + 1, ysrc:ysrc + 1, ...] += stokes_vec[stokes_indexer] * xdum[x_indexer] * ydum[
                     y_indexer]
         # process model images -- convolve with PSF and add to data
@@ -500,10 +511,10 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
             # else make a resampler engine
             else:
                 model_resampler = ImageResampler(modelproj, proj,
-                                                 numpy.arange(model.shape[0], dtype=float),
-                                                 numpy.arange(model.shape[1], dtype=float),
-                                                 numpy.arange(data.shape[0], dtype=float),
-                                                 numpy.arange(data.shape[1], dtype=float))
+                                                 np.arange(model.shape[0], dtype=float),
+                                                 np.arange(model.shape[1], dtype=float),
+                                                 np.arange(data.shape[0], dtype=float),
+                                                 np.arange(data.shape[1], dtype=float))
                 data_x_slice, data_y_slice = model_resampler.targetSlice()
                 dprintf(3, "Source %s: resampling into image at %s, %s\n", src.shape.filename, data_x_slice,
                         data_y_slice)
@@ -520,13 +531,13 @@ def restoreSources(fits_hdu, sources, gmaj, gmin=None, grot=0, freq=None, primar
                 box_radius = 5 * (max(gmaj, gmin)) / min(abs(modelproj.xscale), abs(modelproj.yscale))
                 radius = int(round(box_radius))
                 # convert pixel coordinates into world coordinates relative to 0
-                xi = numpy.arange(-radius, radius + 1) * modelproj.xscale
-                yj = numpy.arange(-radius, radius + 1) * modelproj.yscale
+                xi = np.arange(-radius, radius + 1) * modelproj.xscale
+                yj = np.arange(-radius, radius + 1) * modelproj.yscale
                 # work out rotated coordinates
-                xi1 = (xi * cos_rot)[:, numpy.newaxis] - (yj * sin_rot)[numpy.newaxis, :]
-                yj1 = (xi * sin_rot)[:, numpy.newaxis] + (yj * cos_rot)[numpy.newaxis, :]
+                xi1 = (xi * cos_rot)[:, np.newaxis] - (yj * sin_rot)[np.newaxis, :]
+                yj1 = (xi * sin_rot)[:, np.newaxis] + (yj * cos_rot)[np.newaxis, :]
                 # evaluate convolution kernel
-                conv_kernel = numpy.exp(-((xi1 / gmaj) ** 2 + (yj1 / gmin) ** 2) / 2.)
+                conv_kernel = np.exp(-((xi1 / gmaj) ** 2 + (yj1 / gmin) ** 2) / 2.)
                 conv_kernels[modelproj.xscale, modelproj.yscale] = conv_kernel
             # Work out data slices that we need to loop over.
             # For every 2D slice in the data image cube (assuming other axes besides x/y), we need to apply a

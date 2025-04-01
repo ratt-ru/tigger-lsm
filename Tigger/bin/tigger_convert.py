@@ -32,9 +32,14 @@ import re
 import sys
 import traceback
 
-import numpy
+import numpy as np
 import os.path
 import Cattery.Siamese.OMS.Utils as Utils
+from Tigger.Coordinates import get_wcs_info
+
+# add brick
+from astropy.io import fits
+from astropy.wcs import WCS
 
 DEG = math.pi / 180
 
@@ -42,43 +47,43 @@ NATIVE = "Tigger"
 
 
 def Jones2Mueller_circular(J):
-    S = numpy.matrix([[1, 0, 0, 1], [0, 1, 1j, 0], [0, 1, -1j, 0], [1, 0, 0, -1]])
+    S = np.matrix([[1, 0, 0, 1], [0, 1, 1j, 0], [0, 1, -1j, 0], [1, 0, 0, -1]])
     # Compute the Mueller matrix
-    MM = (S.I) * numpy.kron(J, J.H) * S
-    return numpy.real(MM)
+    MM = (S.I) * np.kron(J, J.H) * S
+    return np.real(MM)
 
 
 def Jones2Mueller_linear(J):
-    S = numpy.matrix([[1, 1, 0, 0], [0, 0, 1, 1j], [0, 0, 1, -1j], [1, -1, 0, 0]])
+    S = np.matrix([[1, 1, 0, 0], [0, 0, 1, 1j], [0, 0, 1, -1j], [1, -1, 0, 0]])
     # Compute the Mueller matrix
-    MM = (S.I) * numpy.kron(J, J.H) * S
-    return numpy.real(MM)
+    MM = (S.I) * np.kron(J, J.H) * S
+    return np.real(MM)
 
 
 ## Griffin's old version, for linear. Possibly the order is wrong
-#  A=numpy.matrix([[1,0,0,1],[1,0,0,-1],[0,1,1,0],[0,1j,-1j,0]])
-#  M=A*numpy.kron(J,J.conj())*numpy.linalg.inv(A)
-#  return numpy.real(M)
+#  A=np.matrix([[1,0,0,1],[1,0,0,-1],[0,1,1,0],[0,1j,-1j,0]])
+#  M=A*np.kron(J,J.conj())*np.linalg.inv(A)
+#  return np.real(M)
 
-def arc2lm(l0, m0, arclen=2. * numpy.pi, nsteps=360):
-    """Return cartesian positions that sample an arc of a circle (similar to numpy.linspace)
+def arc2lm(l0, m0, arclen=2. * np.pi, nsteps=360):
+    """Return cartesian positions that sample an arc of a circle (similar to np.linspace)
     l0,m0: initial cartesian position to determine radius and starting point
     arclen: angle, in radians, to sample, value should be between 0 and 2pi
     nsteps: number of samples"""
-    r = numpy.sqrt(float(l0) ** 2. + float(m0) ** 2.)
-    angle = numpy.arctan2(m0, l0)
-    da = numpy.linspace(0., arclen, num=nsteps)
-    l = r * numpy.cos(angle + da)
-    m = r * numpy.sin(angle + da)
+    r = np.sqrt(float(l0) ** 2. + float(m0) ** 2.)
+    angle = np.arctan2(m0, l0)
+    da = np.linspace(0., arclen, num=nsteps)
+    l = r * np.cos(angle + da)
+    m = r * np.sin(angle + da)
     return l, m
 
 
 def rotatelm(l0, m0, rotangle):
     """Rotate (l0,m0) to a new (l,m) based on angle"""
-    r = numpy.sqrt(float(l0) ** 2. + float(m0) ** 2.)
-    angle = numpy.arctan2(m0, l0)
-    l = r * numpy.cos(angle + rotangle)
-    m = r * numpy.sin(angle + rotangle)
+    r = np.sqrt(float(l0) ** 2. + float(m0) ** 2.)
+    angle = np.arctan2(m0, l0)
+    l = r * np.cos(angle + rotangle)
+    m = r * np.sin(angle + rotangle)
     return l, m
 
 
@@ -517,33 +522,32 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                 parser.error("Invalid --add-brick setting %s" % brickspec)
             if [src.name for src in sources if src.name == srcname]:
                 print("Error: model already contains a source named '%s'" % srcname)
-            # add brick
-            from astropy.io import fits as pyfits
-            from astLib.astWCS import WCS
 
-            input_hdu = pyfits.open(fitsfile)[0]
+            input_hdu = fits.open(fitsfile)[0]
             hdr = input_hdu.header
             max_flux = float(input_hdu.data.max())
-            wcs = WCS(hdr, mode='pyfits')
-            # Get reference pixel coordinates
-            # wcs.getCentreWCSCoords() doesn't work, as that gives us the middle of the image
-            # So scan the header to get the CRPIX values
-            ra0 = dec0 = 1
-            for iaxis in range(hdr['NAXIS']):
-                axs = str(iaxis + 1)
-                name = hdr.get('CTYPE' + axs, axs).upper()
-                if name.startswith("RA"):
-                    ra0 = hdr.get('CRPIX' + axs, 1) - 1
-                elif name.startswith("DEC"):
-                    dec0 = hdr.get('CRPIX' + axs, 1) - 1
-            # convert pixel to degrees
-            ra0, dec0 = wcs.pix2wcs(ra0, dec0)
+
+            wcs, refpix, refsky, ra_axis, dec_axis = get_wcs_info(hdr)
+            naxis = hdr["NAXIS"]
+            if ra_axis is None or dec_axis is None:
+                print("Can't find RA and/or DEC axis in this FITS image")
+                sys.exit(1)
+
+            ra0, dec0 = refsky[ra_axis], refsky[dec_axis]
+
+            # convert reference pixel from degrees to rad
             ra0 *= DEG
             dec0 *= DEG
-            sx, sy = wcs.getHalfSizeDeg()
+            # get NX, NY
+            nx, ny = input_hdu.data.shape[-1:-3:-1]
+
+            # get half-size of image
+            sx = nx/2 * abs(hdr[f"CDELT{ra_axis+1}"])
+            sy = nx/2 * abs(hdr[f"CDELT{dec_axis+1}"])
+            print("Image half-size is %f,%f deg" % (sx, sy))
             sx *= DEG
             sy *= DEG
-            nx, ny = input_hdu.data.shape[-1:-3:-1]
+
             from Tigger.Models import ModelClasses, SkyModel
 
             pos = ModelClasses.Position(ra0, dec0)
@@ -771,12 +775,12 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                         fld = dm.direction('J2000', dq.quantity(ra, "rad"), dq.quantity(dec, "rad"))
                         tab = tab.query("FIELD_ID==%d" % field)
                         # get unique times
-                        times = numpy.array(sorted(set(tab.getcol("TIME")[~tab.getcol("FLAG_ROW")])))
+                        times = np.array(sorted(set(tab.getcol("TIME")[~tab.getcol("FLAG_ROW")])))
                         pa1 = [(dm.do_frame(dm.epoch("UTC", dq.quantity(t, "s"))) and dm.posangle(fld,
                                                                                                   zenith).get_value(
                             "rad")) for t in times]
                         pas += pa1
-                        pa1 = numpy.array(pa1) / DEG
+                        pa1 = np.array(pa1) / DEG
                         if options.enable_plots:
                             import pylab
 
@@ -787,19 +791,19 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                             print("Saved plot " + os.path.basename(ms) + ".parangle.png")
                         print("MS %s, PA range is %fdeg to %fdeg" % (ms, pa1[0], pa1[-1]))
                     # get lm's rotated through those ranges
-                    pa_range = numpy.array(pas)
+                    pa_range = np.array(pas)
                 elif options.pa_range is not None:
                     try:
                         ang0, ang1 = list(map(float, options.pa_range.split(",", 1)))
                     except:
                         parser.error("Incorrect --pa-range option. FROM,TO values expected.")
-                    pa_range = numpy.arange(ang0, ang1 + 1, 1) * DEG
+                    pa_range = np.arange(ang0, ang1 + 1, 1) * DEG
                 elif options.pa is not None:
                     pa_range = options.pa * DEG
                 else:
                     pa_range = None
                 if options.verbose:
-                    print("PA (deg):", " ".join(["%f" % (x / DEG) for x in pa_range]) if numpy.iterable(
+                    print("PA (deg):", " ".join(["%f" % (x / DEG) for x in pa_range]) if np.iterable(
                         pa_range) else pa_range)
             if options.enable_plots:
                 import pylab
@@ -824,11 +828,11 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
 
                         Jones2Mueller = Jones2Mueller_linear if options.linear_pol else Jones2Mueller_circular
 
-                        jones = [vb.interpolate(l, m, freq=beamRefFreq) if vb else numpy.array(0) for vb in vbs]
+                        jones = [vb.interpolate(l, m, freq=beamRefFreq) if vb else np.array(0) for vb in vbs]
                         # incorrect old-style Jones averaging
                         if options.beam_average_jones:
                             a, b, c, d = [j.mean() for j in jones]
-                            mueller = Jones2Mueller(numpy.matrix([[a, b], [c, d]]))
+                            mueller = Jones2Mueller(np.matrix([[a, b], [c, d]]))
                             if options.verbose > 1:
                                 print("%s: jones11 mean %f std %f" % (src.name, abs(a), abs(jones[0]).std()))
                                 print("%s: jones22 mean %f std %f" % (src.name, abs(d), abs(jones[3]).std()))
@@ -836,8 +840,8 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                                 pylab.plot(abs(jones[0]), label="|J11| " + src.name)
                         # new-style averaging of Mueller matrix
                         else:
-                            muellers = [Jones2Mueller(numpy.matrix([[a, b], [c, d]])) for a, b, c, d in
-                                        numpy.broadcast(*jones)]
+                            muellers = [Jones2Mueller(np.matrix([[a, b], [c, d]])) for a, b, c, d in
+                                        np.broadcast(*jones)]
                             mueller = sum(muellers) / len(muellers)
                             if options.enable_plots:
                                 pylab.plot([m[0, 0] for m in muellers], label='M11 ' + src.name)
@@ -847,14 +851,14 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                                 print("%s: jones22 mean %f std %f" % (
                                     src.name, abs(jones[3].mean()), abs(jones[3]).std()))
                                 print("%s: mueller11 mean %f std %f" % (
-                                    src.name, mueller[0, 0], numpy.std([m[0, 0] for m in muellers])))
+                                    src.name, mueller[0, 0], np.std([m[0, 0] for m in muellers])))
                         bg = mueller[0, 0]
                         ##          OMS 6/7/2015: let's do full inversion now to correct all four polarizations
                         if options.app_to_int:
                             if options.beam_nopol:
                                 mueller = 1 / bg
                             else:
-                                mueller = numpy.linalg.inv(mueller)
+                                mueller = np.linalg.inv(mueller)
                         else:
                             if options.beam_nopol:
                                 mueller = bg
@@ -869,7 +873,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
                         else:
                             src.removeAttribute('nobeam')
                             src.setAttribute('beamgain', bg)
-                            iquv0 = numpy.matrix([[getattr(src.flux, stokes, 0.)] for stokes in "IQUV"])
+                            iquv0 = np.matrix([[getattr(src.flux, stokes, 0.)] for stokes in "IQUV"])
                             iquv = mueller * iquv0
                             if options.verbose > 1:
                                 print("%s: from %s to %s" % (src.name, iquv0.T, iquv.T))
@@ -886,20 +890,20 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
 
                                 bw = options.beam_spi * 1e+6 / 2
                                 # make a frequency grid of 10 points across the band
-                                # freqgrid = numpy.arange(beamRefFreq-bw,beamRefFreq+bw,bw/5)
-                                freqgrid = numpy.arange(beamRefFreq - bw, beamRefFreq + bw * 1.01, bw / 5)
+                                # freqgrid = np.arange(beamRefFreq-bw,beamRefFreq+bw,bw/5)
+                                freqgrid = np.arange(beamRefFreq - bw, beamRefFreq + bw * 1.01, bw / 5)
                                 gxx = vbs[0].interpolate(l, m, freq=freqgrid, freqaxis=2)
                                 gyy = vbs[3].interpolate(l, m, freq=freqgrid, freqaxis=2)
                                 spiBg = (gxx * gxx.conj() + gyy * gyy.conj()).real
                                 spiBg = spiBg[:, 0, :]
                                 # power law fit
-                                logbg1 = numpy.log10(spiBg)
-                                logbg = numpy.log10(spiBg.mean(axis=0))
-                                logfreq = numpy.log10(freqgrid)
+                                logbg1 = np.log10(spiBg)
+                                logbg = np.log10(spiBg.mean(axis=0))
+                                logfreq = np.log10(freqgrid)
                                 fitfunc = lambda p, x: p[0] + p[1] * x
                                 errfunc = lambda p, x, y: (y - fitfunc(p, x))
                                 pinit = [10 ** logbg[0], 0.]
-                                if numpy.isinf(logbg).sum() > 0:
+                                if np.isinf(logbg).sum() > 0:
                                     spi = 0.
                                     amp0 = spiBg[0, 0]
                                 else:
@@ -952,14 +956,14 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
         sources = sorted(sources, key=cmp_to_key(lambda a, b: cmp(b.brightness(), a.brightness())))
         projection = Coordinates.Projection.SinWCS(*model.fieldCenter())
         # work out source clusters
-        l = numpy.zeros(len(sources), float)
-        m = numpy.zeros(len(sources), float)
+        l = np.zeros(len(sources), float)
+        m = np.zeros(len(sources), float)
         for i, src in enumerate(sources):
             l[i], m[i] = projection.lm(src.pos.ra, src.pos.dec)
         if options.cluster_dist:
             # now, convert to dist[i,j]: distance between sources i and j
-            dist = numpy.sqrt(
-                (l[:, numpy.newaxis] - l[numpy.newaxis, :]) ** 2 + (m[:, numpy.newaxis] - m[numpy.newaxis, :]) ** 2)
+            dist = np.sqrt(
+                (l[:, np.newaxis] - l[np.newaxis, :]) ** 2 + (m[:, np.newaxis] - m[np.newaxis, :]) ** 2)
             # cluster[i] is (N,R), where N is cluster number for source #i, and R is rank of that source in the cluster
             # place source 0 into cluster 0,#0
             cluster = [(0, 0)]
