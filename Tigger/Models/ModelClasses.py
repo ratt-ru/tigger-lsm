@@ -483,6 +483,21 @@ class Gaussian(Shape):
             err[0] * DEG * 3600, delimiters[0], delimiters[1], err[1] * DEG * 3600, delimiters[0],
             delimiters[2], round(err[2] * DEG), delimiters[3])
 
+class Shapelet(Shape):
+    typecode = "Sha"
+
+    mandatory_attrs = ["sbetal", "sbetam", "shapelet_coeffs"]
+    optional_attrs = dict(ex_err=None, ey_err=None, pa_err=None)
+
+    def getShape(self):
+        return self.ex, self.ey, self.pa
+
+    def getShapeErr(self):
+        err = [getattr(self, a + '_err', None) for a in self.mandatory_attrs]
+        if all([a is None for a in err]):
+            return None
+        return tuple(err)
+
 
 class FITSImage(Shape):
     typecode = "FITS"
