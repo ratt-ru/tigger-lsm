@@ -372,7 +372,7 @@ is a Tigger model (-f switch must be specified to allow overwriting), or else a 
 
     selections = []
     for selstr in (options.select or []):
-        match = re.match("^(?i)([^=<>!.]+)(%s)([^dms]+)([dms])?" % "|".join(
+        match = re.match("(?i)^([^=<>!.]+)(%s)([^dms]+)([dms])?" % "|".join(
             [key.replace('.', '\.') for key in list(select_predicates.keys())]), selstr)
         if not match:
             parser.error("Malformed --select string '%s'." % selstr)
