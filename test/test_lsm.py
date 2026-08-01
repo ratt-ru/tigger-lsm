@@ -30,6 +30,53 @@ def verify_output(output, *regexes):
         return False
     return True
 
+def test_convert_select(tmpdir: str = None):
+    """`--select` must parse on Python 3.11+.
+
+    The selection expression is matched against a pattern carrying an inline
+    `(?i)` flag. While that flag sat at position 1 (after `^`) rather than at
+    the start, Python 3.11+ raised
+
+        re.error: global flags not at the start of the expression at position 1
+
+    and *every* `--select` invocation aborted before doing any work. Python
+    3.10 and earlier only warned, so this went unnoticed. Covers both operator
+    spellings and the unit-suffix form from the help text.
+    """
+    if tmpdir is None:
+        tmpdir_obj = TemporaryDirectory()
+        tmpdir = tmpdir_obj.name
+        print(f"temporary output dir is {tmpdir}")
+
+    def nsources(output):
+        """The source count tigger-convert reports when saving."""
+        match = re.search(r"model containing (\d+) sources", output)
+        assert match, f"could not find a source count in output:\n{output}"
+        return int(match.group(1))
+
+    retcode, output = run(f"""tigger-convert deep4.gaul {tmpdir}/sel_all.lsm.html -f""")
+    assert retcode == 0, output
+    total = nsources(output)
+
+    # FORTRAN-style operator
+    retcode, output = run(
+        f"""tigger-convert deep4.gaul {tmpdir}/sel_fortran.lsm.html -f --select "I.gt.0.01" """)
+    assert retcode == 0, output
+    selected = nsources(output)
+    assert selected < total, f"--select I.gt.0.01 kept all {total} sources; it should drop some"
+
+    # symbolic operator plus the documented unit suffix ("r<5d")
+    retcode, output = run(
+        f"""tigger-convert deep4.gaul {tmpdir}/sel_symbolic.lsm.html -f --select "r<5d" """)
+    assert retcode == 0, output
+
+    # multiple --select options are a logical AND
+    retcode, output = run(
+        f"""tigger-convert deep4.gaul {tmpdir}/sel_and.lsm.html -f """
+        """--select "I.gt.0.01" --select "r<5d" """)
+    assert retcode == 0, output
+
+
 def test_convert(tmpdir: str = None):
     if tmpdir is None:
         tmpdir_obj = TemporaryDirectory()
